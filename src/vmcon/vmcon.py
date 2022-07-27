@@ -201,7 +201,9 @@ class VMCON:
         mu_equality = self._calculate_mu_i(mu_equality, lamda_equality)
         mu_inequality = self._calculate_mu_i(mu_inequality, lamda_inequality)
 
-        def phi(x: np.ndarray):
+        # TODO: Cache this function to avoid repeated calls to the objective (and constraints)
+        def phi(alpha: np.floating):
+            x = x_jm1 + alpha * delta
             f = self.f(x)
             sum_equality = (
                 mu_equality
@@ -214,19 +216,21 @@ class VMCON:
 
             return f + sum_equality + sum_inequality
 
-        def dphi(x: np.ndarray):
-            return approx_fprime(x, phi)
+        # TODO: Cache this function to avoid repeated calls to the objective (and constraints)
+        def dphi(alpha: np.floating):
+            return approx_fprime(alpha, phi)
 
         alpha = 1.0
-        one = np.ones_like(x_jm1)
-        prev_x = x_jm1
         for _ in range(10):
-            x = x_jm1 + alpha * delta
-            if phi(prev_x) - phi(x) < (0.1 * dphi(x)).all():
+
+            if phi(alpha) <= phi(0) + 0.1 * alpha * dphi(0):
                 break
 
-            alpha = (alpha * dphi(x)) / 2 * (phi(x_jm1) - phi(one) - alpha * dphi(x))
-            prev_x = x
+            alpha = max(
+                0.1 * alpha,
+                (alpha * dphi(alpha)) / 2 * (phi(1) - phi(0) - alpha * dphi(alpha)),
+            )
+
         else:
             raise Exception("Line search did not converge on an approimate minima")
 
@@ -289,24 +293,56 @@ class VMCON:
         h = inequality_constraint_values
 
         delta = cp.Variable(x.shape)
-        problem = cp.Problem(
-            cp.Minimize(0.5 * cp.quad_form(delta, P) + q.T @ delta),
-            [G @ delta <= h, A @ delta == b],
-        )
+        problem_statement = cp.Minimize(0.5 * cp.quad_form(delta, P) + q.T @ delta)
 
-        problem.solve()
+        lamda_equality = np.array([])
+        lamda_inequality = np.array([])
 
-        lamda_equality = -problem.constraints[1].dual_value
-        lamda_inequality = problem.constraints[0].dual_value
+        if self.inequality_constraints and self.equality_constraints:
+            problem = cp.Problem(
+                problem_statement,
+                [G @ delta <= h, A @ delta == b],
+            )
+
+            problem.solve()
+
+            lamda_inequality = problem.constraints[0].dual_value
+            lamda_equality = -problem.constraints[1].dual_value
+
+        elif self.inequality_constraints and not self.equality_constraints:
+            problem = cp.Problem(
+                problem_statement,
+                [G @ delta <= h],
+            )
+
+            problem.solve()
+
+            lamda_inequality = problem.constraints[0].dual_value
+
+        elif not self.inequality_constraints and self.equality_constraints:
+            problem = cp.Problem(
+                problem_statement,
+                [A @ delta == b],
+            )
+
+            problem.solve()
+
+            lamda_equality = -problem.constraints[0].dual_value
+
+        else:
+            problem = cp.Problem(problem_statement)
+
+            problem.solve()
 
         return delta.value, lamda_equality, lamda_inequality
 
 
 if __name__ == "__main__":
     f = lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2
-    ce = [lambda x: x[0] - (2 * x[1]) + 1]
+    ce = []
     ci = [
-        lambda x: ((x[0] ** 2) / 4) + (x[1] ** 2) - 1,
+        lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1,
+        lambda x: x[0] - (2 * x[1]) + 1,
     ]
 
     vmcon = VMCON(f, ce, ci, 2)
