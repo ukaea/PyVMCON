@@ -285,8 +285,8 @@ class VMCON:
         A = ceprime
         b = -equality_constraint_values
 
-        G = ciprime
-        h = -inequality_constraint_values
+        G = -ciprime
+        h = inequality_constraint_values
 
         delta = cp.Variable(x.shape)
         problem = cp.Problem(

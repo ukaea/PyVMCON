@@ -26,7 +26,7 @@ class VMCONTestAsset(NamedTuple):
             lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2,
             equality_constraints=[lambda x: x[0] - (2 * x[1]) + 1],
             inequality_constraints=[
-                lambda x: ((x[0] ** 2) / 4) + (x[1] ** 2) - 1,
+                lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1,
             ],
             initial_x=np.array([2.0, 2.0]),
             max_iter=10,
