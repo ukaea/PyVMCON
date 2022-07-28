@@ -3,6 +3,8 @@ import numpy as np
 import cvxpy as cp
 from scipy.optimize import approx_fprime
 
+from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
+
 
 class VMCON:
     def __init__(
@@ -54,7 +56,12 @@ class VMCON:
         mu_inequality = None
 
         for _ in range(max_iter):
+            print(f"x into quadratic subproblem: {x}")
             delta, lamda_equality, lamda_inequality = self.solve_qsp(x, B)
+
+            print(f"{delta = }")
+            print(f"{lamda_equality = }")
+            print(f"{lamda_inequality = }")
 
             # Flow chart on page 8 seems to suggest we check the criteria here
             # but surely that should be done after the line search is complete
@@ -76,9 +83,10 @@ class VMCON:
             B = self.calculate_new_B(B, x, xj, lamda_equality, lamda_inequality)
 
             x = xj
+            print("")
 
         else:
-            raise Exception(
+            raise VMCONConvergenceException(
                 f"Could not converge on a feasible solution after {max_iter} iterations."
             )
 
@@ -216,23 +224,30 @@ class VMCON:
 
             return f + sum_equality + sum_inequality
 
-        # TODO: Cache this function to avoid repeated calls to the objective (and constraints)
-        def dphi(alpha: np.floating):
-            return approx_fprime(alpha, phi)
+        capital_delta = approx_fprime(0, phi)
 
         alpha = 1.0
         for _ in range(10):
 
-            if phi(alpha) <= phi(0) + 0.1 * alpha * dphi(0):
+            # print(f"    X in line search: {x_jm1 + alpha*delta}")
+
+            if phi(alpha) <= phi(0) + 0.1 * alpha * capital_delta:
                 break
+
+            print(f"    {capital_delta*alpha=}, {(phi(alpha) - phi(0))=}")
 
             alpha = max(
                 0.1 * alpha,
-                (alpha * dphi(alpha)) / 2 * (phi(1) - phi(0) - alpha * dphi(alpha)),
+                capital_delta
+                * alpha
+                / 2
+                * (phi(alpha) - phi(0) - alpha * capital_delta),
             )
 
         else:
-            raise Exception("Line search did not converge on an approimate minima")
+            raise LineSearchConvergenceException(
+                "Line search did not converge on an approimate minima"
+            )
 
         return alpha, mu_equality, mu_inequality
 
@@ -335,16 +350,3 @@ class VMCON:
             problem.solve()
 
         return delta.value, lamda_equality, lamda_inequality
-
-
-if __name__ == "__main__":
-    f = lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2
-    ce = []
-    ci = [
-        lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1,
-        lambda x: x[0] - (2 * x[1]) + 1,
-    ]
-
-    vmcon = VMCON(f, ce, ci, 2)
-
-    print(vmcon.run_vmcon(np.array([2.0, 2.0]), 10))
