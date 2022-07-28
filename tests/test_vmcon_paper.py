@@ -83,7 +83,7 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
             initial_x=np.array([2.0, 2.0]),
             max_iter=5,
             epsilon=1e-8,
-            expected_x=[],
+            expected_x=[2.3999994310874733, 1.1249516708907119e6],
             expected_lamda_equality=[0.0],
             expected_lamda_inequality=[0.0],
         ),
