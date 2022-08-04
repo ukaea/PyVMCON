@@ -1,4 +1,4 @@
-from typing import Callable, List, Union
+from typing import List, Union
 import numpy as np
 import numpy.typing as npt
 import cvxpy as cp
@@ -6,7 +6,6 @@ from scipy.optimize import approx_fprime
 
 from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
 from .function import Function
-from .utilities import approximate_gradient
 from .types import Vector, NumpyVector, coerce_vector
 
 
