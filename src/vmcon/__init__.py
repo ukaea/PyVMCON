@@ -1,10 +1,10 @@
 from .vmcon import solve
 from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
-from .building_blocks import FunctionBuildingBlock, Function
+from .function import AbstractFunction, Function
 
 __all__ = [
     solve,
-    FunctionBuildingBlock,
+    AbstractFunction,
     Function,
     VMCONConvergenceException,
     LineSearchConvergenceException,
