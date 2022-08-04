@@ -7,7 +7,7 @@ from scipy.optimize import approx_fprime
 from .types import NumpyVector
 
 
-class FunctionBuildingBlock(ABC):
+class AbstractFunction(ABC):
     """Provides a common interface for classes
     that will wrap a function."""
 
@@ -50,7 +50,7 @@ class FunctionBuildingBlock(ABC):
         return approx_fprime(x, self.f, epsilon=epsilon)
 
 
-class Function(FunctionBuildingBlock):
+class Function(AbstractFunction):
     """Provides a concrete implementation of a Function
     which can be built by passing `lambda`s to the constructor
     """

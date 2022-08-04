@@ -1,11 +1,11 @@
-from typing import Callable, List, Union
+from typing import List, Union
 import numpy as np
 import numpy.typing as npt
 import cvxpy as cp
 from scipy.optimize import approx_fprime
 
 from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
-from .building_blocks import Function
+from .function import Function
 from .types import Vector, NumpyVector, coerce_vector
 
 
@@ -37,6 +37,10 @@ def solve(
     # search to realise that it is the first iteration
     mu_equality = None
     mu_inequality = None
+
+    # Ensure these variables are visible to the exception
+    lamda_equality = None
+    lamda_inequality = None
 
     for _ in range(max_iter):
         # solve the quadratic subproblem to identify
@@ -96,7 +100,10 @@ def solve(
 
     else:
         raise VMCONConvergenceException(
-            f"Could not converge on a feasible solution after {max_iter} iterations."
+            f"Could not converge on a feasible solution after {max_iter} iterations.",
+            x=x,
+            lamda_equality=lamda_equality,
+            lamda_inequality=lamda_inequality,
         )
 
     return x, lamda_equality, lamda_inequality
@@ -272,16 +279,23 @@ def perform_linesearch(
 
         return f(x) + sum_equality + sum_inequality
 
-    capital_delta = approx_fprime(0, phi)
+    # dphi(0) for unconstrained minimisation = F'(x_jm1)*delta
+    # this is extended to constrained minimisation subtracting the
+    # weighted constraints at 0.
+    capital_delta = (approx_fprime(x_jm1, f) * delta).sum() - phi(0) + f(x_jm1)
 
     alpha = 1.0
-    for _ in range(10):
+    for _ in range(100):
+        # exit if we satisfy the Armijo condition
         if phi(alpha) <= phi(0) + 0.1 * alpha * capital_delta:
             break
 
         alpha = max(
             0.1 * alpha,
-            capital_delta * alpha / 2 * (phi(alpha) - phi(0) - alpha * capital_delta),
+            -0.5
+            * alpha**2
+            * capital_delta
+            / (phi(alpha) - phi(0) - (alpha * capital_delta)),
         )
 
     else:
