@@ -354,7 +354,7 @@ def calculate_new_B(
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
-    ksi = (x_j - x_jm1).reshape((2, 1))
+    ksi = (x_j - x_jm1).reshape((x_j.shape[0], 1))
 
     g1 = _derivative_lagrangian(
         f,
@@ -372,7 +372,7 @@ def calculate_new_B(
         lamda_equality,
         lamda_inequality,
     )
-    gamma = (g1 - g2).reshape((2, 1))
+    gamma = (g1 - g2).reshape((x_j.shape[0], 1))
 
     gamma = _powells_gamma(gamma, ksi, B)
 
