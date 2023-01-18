@@ -1,12 +1,11 @@
 from .vmcon import solve
 from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
-from .function import AbstractFunction, Function
+from .problem import AbstractProblem, Problem
 
 __all__ = [
     solve,
-    AbstractFunction,
-    Function,
+    AbstractProblem,
+    Problem,
     VMCONConvergenceException,
     LineSearchConvergenceException,
 ]
-__version__ = "1.0.0"
