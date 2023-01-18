@@ -4,7 +4,11 @@ import numpy.typing as npt
 import cvxpy as cp
 from scipy.optimize import approx_fprime
 
-from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
+from .exceptions import (
+    VMCONConvergenceException,
+    LineSearchConvergenceException,
+    _QspSolveException,
+)
 from .function import Function
 from .types import Vector, NumpyVector, coerce_vector
 
@@ -46,9 +50,17 @@ def solve(
         # solve the quadratic subproblem to identify
         # our search direction and the Lagrange multipliers
         # for our constraints
-        delta, lamda_equality, lamda_inequality = solve_qsp(
-            f, equality_constraints, inequality_constraints, x, B
-        )
+        try:
+            delta, lamda_equality, lamda_inequality = solve_qsp(
+                f, equality_constraints, inequality_constraints, x, B
+            )
+        except _QspSolveException as e:
+            raise VMCONConvergenceException(
+                f"QSP failed to solve, indicating no feasible solution could be found.",
+                x=x,
+                lamda_equality=lamda_equality,
+                lamda_inequality=lamda_inequality,
+            ) from e
 
         # Exit to optimisation loop if the convergence
         # criteria is met
@@ -182,6 +194,9 @@ def solve_qsp(
 
         problem.solve()
 
+        if any(i.dual_value is None for i in problem.constraints):
+            raise _QspSolveException("QSP failed to solve.")
+
         lamda_inequality = problem.constraints[0].dual_value
         lamda_equality = -problem.constraints[1].dual_value
 
@@ -193,6 +208,9 @@ def solve_qsp(
 
         problem.solve()
 
+        if problem.constraints[0].dual_value is None:
+            raise _QspSolveException("QSP failed to solve.")
+
         lamda_inequality = problem.constraints[0].dual_value
 
     elif not inequality_constraints and equality_constraints:
@@ -203,12 +221,17 @@ def solve_qsp(
 
         problem.solve()
 
+        if problem.constraints[0].dual_value is None:
+            raise _QspSolveException("QSP failed to solve.")
+
         lamda_equality = -problem.constraints[0].dual_value
 
     else:
         problem = cp.Problem(problem_statement)
 
         problem.solve()
+
+        # Unclear whether this can ever fail to solve?
 
     return delta.value, lamda_equality, lamda_inequality
 

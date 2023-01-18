@@ -3,6 +3,10 @@ from .types import NumpyVector
 
 
 class VMCONConvergenceException(Exception):
+    """Base class for an exception that indicates VMCON has
+    failed to converge. This exception allows certain diagnostics
+    to be passed and propogated with the exception."""
+
     def __init__(
         self,
         *args: object,
@@ -25,5 +29,15 @@ class VMCONConvergenceException(Exception):
         self.lamda_inequality = lamda_inequality
 
 
+class _QspSolveException(Exception):
+    """An exception that should only be used internally
+    to identify that the QSP has failed to solve."""
+
+    pass
+
+
 class LineSearchConvergenceException(Exception):
+    """Indicates the line search portion of VMCON was unable to
+    converge on a solution within a pre-defined number of iterations"""
+
     pass
