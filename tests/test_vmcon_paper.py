@@ -82,7 +82,7 @@ class VMCONTestAsset(NamedTuple):
     ],
 )
 def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
-    x, lamda_equality, lamda_inequality = solve(
+    x, lamda_equality, lamda_inequality, _ = solve(
         vmcon_example.problem,
         vmcon_example.initial_x,
         vmcon_example.max_iter,

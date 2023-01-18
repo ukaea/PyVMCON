@@ -113,7 +113,7 @@ def solve(
             lamda_inequality=lamda_inequality,
         )
 
-    return x, lamda_equality, lamda_inequality
+    return x, lamda_equality, lamda_inequality, result
 
 
 def solve_qsp(
