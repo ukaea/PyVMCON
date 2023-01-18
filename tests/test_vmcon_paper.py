@@ -1,16 +1,14 @@
 import pytest
-from typing import Callable, List, NamedTuple
+from typing import NamedTuple
 import numpy as np
 
 from vmcon import solve
 from vmcon.exceptions import VMCONConvergenceException
-from vmcon.function import Function
+from vmcon.problem import Problem
 
 
 class VMCONTestAsset(NamedTuple):
-    function: Callable[[np.ndarray], np.floating]
-    equality_constraints: List[Callable[[np.ndarray], np.floating]]
-    inequality_constraints: List[Callable[[np.ndarray], np.floating]]
+    problem: Problem
 
     initial_x: np.ndarray
     max_iter: int
@@ -26,19 +24,14 @@ class VMCONTestAsset(NamedTuple):
     [
         # Test 1 detailed in ANL-80-64 page 25
         VMCONTestAsset(
-            Function(
+            Problem(
                 lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2,
                 lambda x: np.array([2 * (x[0] - 2), 2 * (x[1] - 1)]),
+                [lambda x: x[0] - (2 * x[1]) + 1],
+                [lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1],
+                [lambda _: np.array([1, -2])],
+                [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
             ),
-            equality_constraints=[
-                Function(lambda x: x[0] - (2 * x[1]) + 1, lambda x: np.array([1, -2]))
-            ],
-            inequality_constraints=[
-                Function(
-                    lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1,
-                    lambda x: np.array([-0.5 * x[0], -2 * x[1]]),
-                ),
-            ],
             initial_x=np.array([2.0, 2.0]),
             max_iter=10,
             epsilon=1e-8,
@@ -48,24 +41,37 @@ class VMCONTestAsset(NamedTuple):
         ),
         # Test 2 detailed in ANL-80-64 page 28
         VMCONTestAsset(
-            Function(lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2),
-            equality_constraints=[],
-            inequality_constraints=[
-                Function(lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1),
-                Function(lambda x: x[0] - (2 * x[1]) + 1),
-            ],
+            Problem(
+                lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2,
+                lambda x: np.array([2 * (x[0] - 2), 2 * (x[1] - 1)]),
+                [],
+                [
+                    lambda x: x[0] - (2 * x[1]) + 1,
+                    lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1,
+                ],
+                [],
+                [
+                    lambda _: np.array([1, -2]),
+                    lambda x: np.array([-0.5 * x[0], -2 * x[1]]),
+                ],
+            ),
             initial_x=np.array([2.0, 2.0]),
             max_iter=10,
             epsilon=1e-8,
             expected_x=[1.6649685472365443, 0.55404867491788852],
             expected_lamda_equality=[],
-            expected_lamda_inequality=[0.80489557193146243, 0],
+            expected_lamda_inequality=[0, 0.80489557193146243],
         ),
         # Example 1a of https://en.wikipedia.org/wiki/Lagrange_multiplier
         VMCONTestAsset(
-            Function(lambda x: x[0] + x[1]),
-            equality_constraints=[Function(lambda x: (x[0] ** 2) + (x[1] ** 2) - 1)],
-            inequality_constraints=[],
+            Problem(
+                lambda x: x[0] + x[1],
+                lambda _: np.array([1, 1]),
+                [lambda x: (x[0] ** 2) + (x[1] ** 2) - 1],
+                [],
+                [lambda x: np.array([2 * x[0], 2 * x[1]])],
+                [],
+            ),
             initial_x=np.array([1.0, 1.0]),
             max_iter=10,
             epsilon=2e-8,
@@ -77,9 +83,7 @@ class VMCONTestAsset(NamedTuple):
 )
 def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
     x, lamda_equality, lamda_inequality = solve(
-        vmcon_example.function,
-        vmcon_example.equality_constraints,
-        vmcon_example.inequality_constraints,
+        vmcon_example.problem,
         vmcon_example.initial_x,
         vmcon_example.max_iter,
         vmcon_example.epsilon,
@@ -94,19 +98,14 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
     "vmcon_example",
     [
         VMCONTestAsset(
-            Function(
+            Problem(
                 lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2,
                 lambda x: np.array([2 * (x[0] - 2), 2 * (x[1] - 1)]),
+                [lambda x: x[0] + x[1] - 3],
+                [lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1],
+                [lambda _: np.array([1.0, 1.0])],
+                [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
             ),
-            equality_constraints=[
-                Function(lambda x: x[0] + x[1] - 3, lambda _: np.array([1.0, 1.0]))
-            ],
-            inequality_constraints=[
-                Function(
-                    lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1,
-                    lambda x: np.array([-0.5 * x[0], -2 * x[1]]),
-                ),
-            ],
             initial_x=np.array([2.0, 2.0]),
             max_iter=5,
             epsilon=1e-8,
@@ -119,9 +118,7 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
 def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
     with pytest.raises(VMCONConvergenceException) as e:
         solve(
-            vmcon_example.function,
-            vmcon_example.equality_constraints,
-            vmcon_example.inequality_constraints,
+            vmcon_example.problem,
             vmcon_example.initial_x,
             vmcon_example.max_iter,
             vmcon_example.epsilon,

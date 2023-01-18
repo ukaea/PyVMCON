@@ -1,5 +1,5 @@
 from typing import Optional
-from .types import NumpyVector
+import numpy as np
 
 
 class VMCONConvergenceException(Exception):
@@ -10,9 +10,9 @@ class VMCONConvergenceException(Exception):
     def __init__(
         self,
         *args: object,
-        x: Optional[NumpyVector] = None,
-        lamda_equality: Optional[NumpyVector] = None,
-        lamda_inequality: Optional[NumpyVector] = None
+        x: Optional[np.ndarray] = None,
+        lamda_equality: Optional[np.ndarray] = None,
+        lamda_inequality: Optional[np.ndarray] = None
     ) -> None:
         """Constructor for the exception raised when VMCON cannot converge
         on a feasible solution.

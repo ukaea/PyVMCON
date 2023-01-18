@@ -1,29 +1,29 @@
-from typing import List, Union
+from typing import Union
 import numpy as np
-import numpy.typing as npt
 import cvxpy as cp
-from scipy.optimize import approx_fprime
 
 from .exceptions import (
     VMCONConvergenceException,
     LineSearchConvergenceException,
     _QspSolveException,
 )
-from .function import Function
-from .types import Vector, NumpyVector, coerce_vector
+from .problem import AbstractProblem, Result
 
 
 def solve(
-    f: Function,
-    equality_constraints: List[Function],
-    inequality_constraints: List[Function],
-    x: Vector,
+    problem: AbstractProblem,
+    x: np.ndarray,
     max_iter: int = 10,
     epsilon: float = 1e-8,
 ):
     """The main solving loop of the VMCON non-linear constrained optimiser."""
 
-    x = coerce_vector(x)
+    x = x.squeeze()
+
+    if len(x.shape) != 1:
+        raise ValueError(
+            "Input vector `x` is not a 1D array or an nD array with only 1 non-singleton dimension"
+        )
 
     # n is denoted in the VMCON paper
     # as the number of inputs the function
@@ -31,7 +31,7 @@ def solve(
     n = x.shape[0]
 
     # m is the total number of constraints
-    m = len(equality_constraints) + len(inequality_constraints)
+    m = problem.total_constraints
 
     # The paper uses the B matrix as the
     # running approximation of the Hessian
@@ -47,13 +47,13 @@ def solve(
     lamda_inequality = None
 
     for _ in range(max_iter):
+        result = problem(x)
+
         # solve the quadratic subproblem to identify
         # our search direction and the Lagrange multipliers
         # for our constraints
         try:
-            delta, lamda_equality, lamda_inequality = solve_qsp(
-                f, equality_constraints, inequality_constraints, x, B
-            )
+            delta, lamda_equality, lamda_inequality = solve_qsp(problem, result, x, B)
         except _QspSolveException as e:
             raise VMCONConvergenceException(
                 f"QSP failed to solve, indicating no feasible solution could be found.",
@@ -65,10 +65,7 @@ def solve(
         # Exit to optimisation loop if the convergence
         # criteria is met
         if convergence_test(
-            f,
-            equality_constraints,
-            inequality_constraints,
-            x,
+            result,
             delta,
             lamda_equality,
             lamda_inequality,
@@ -79,9 +76,8 @@ def solve(
         # perform a linesearch along the search direction
         # to mitigate the impact of poor starting conditions.
         alpha, mu_equality, mu_inequality = perform_linesearch(
-            f,
-            equality_constraints,
-            inequality_constraints,
+            problem,
+            result,
             mu_equality,
             mu_inequality,
             lamda_equality,
@@ -97,9 +93,8 @@ def solve(
 
         # Revise matrix B
         B = calculate_new_B(
-            f,
-            equality_constraints,
-            inequality_constraints,
+            problem,
+            result,
             B,
             x,
             xj,
@@ -122,11 +117,10 @@ def solve(
 
 
 def solve_qsp(
-    f: Function,
-    equality_constraints: List[Function],
-    inequality_constraints: List[Function],
-    x: NumpyVector,
-    B: npt.NDArray,
+    problem: AbstractProblem,
+    result: Result,
+    x: np.ndarray,
+    B: np.ndarray,
 ):
     """
     Q(d) = f + dTf' + (1/2)dTBd
@@ -161,24 +155,13 @@ def solve_qsp(
         on page 454 (page 8 of the provided pdf))
     """
     P = B
-    q = f.derivative(x).T
+    q = result.df.T
 
-    equality_constraint_values = np.array([c(x) for c in equality_constraints])
-    inequality_constraint_values = np.array([c(x) for c in inequality_constraints])
+    A = result.deq
+    b = -result.eq
 
-    ceprime = np.array(
-        [c.derivative(x) for c in equality_constraints]
-    )  # derivative of the equality constraints at x^(j-1)
-
-    ciprime = np.array(
-        [c.derivative(x) for c in inequality_constraints]
-    )  # derivative of the inequality constraints at x^(j-1)
-
-    A = ceprime
-    b = -equality_constraint_values
-
-    G = -ciprime
-    h = inequality_constraint_values
+    G = -result.die
+    h = result.ie
 
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(0.5 * cp.quad_form(delta, P) + q.T @ delta)
@@ -186,7 +169,7 @@ def solve_qsp(
     lamda_equality = np.array([])
     lamda_inequality = np.array([])
 
-    if inequality_constraints and equality_constraints:
+    if problem.has_inequality and problem.has_equality:
         problem = cp.Problem(
             problem_statement,
             [G @ delta <= h, A @ delta == b],
@@ -200,7 +183,7 @@ def solve_qsp(
         lamda_inequality = problem.constraints[0].dual_value
         lamda_equality = -problem.constraints[1].dual_value
 
-    elif inequality_constraints and not equality_constraints:
+    elif problem.has_inequality and not problem.has_equality:
         problem = cp.Problem(
             problem_statement,
             [G @ delta <= h],
@@ -213,7 +196,7 @@ def solve_qsp(
 
         lamda_inequality = problem.constraints[0].dual_value
 
-    elif not inequality_constraints and equality_constraints:
+    elif not problem.has_inequality and problem.has_equality:
         problem = cp.Problem(
             problem_statement,
             [A @ delta == b],
@@ -237,37 +220,24 @@ def solve_qsp(
 
 
 def convergence_test(
-    f: Function,
-    equality_constraints: List[Function],
-    inequality_constraints: List[Function],
-    x_jm1: NumpyVector,
-    delta_j: NumpyVector,
-    lamda_equality_i: NumpyVector,
-    lamda_inequality_i: NumpyVector,
+    result: Result,
+    delta_j: np.ndarray,
+    lamda_equality_i: np.ndarray,
+    lamda_inequality_i: np.ndarray,
     epsilon: float,
 ) -> bool:
-    abs_df_dot_delta = abs(np.dot(f.derivative(x_jm1), delta_j))
+    abs_df_dot_delta = abs(np.dot(result.df, delta_j))
     abs_equality__err = abs(
-        np.sum(
-            [
-                lamda * c(x_jm1)
-                for lamda, c in zip(lamda_equality_i, equality_constraints)
-            ]
-        )
+        np.sum([lamda * c for lamda, c in zip(lamda_equality_i, result.eq)])
     )
     abs_inequality__err = abs(
-        np.sum(
-            [
-                lamda * c(x_jm1)
-                for lamda, c in zip(lamda_inequality_i, inequality_constraints)
-            ]
-        )
+        np.sum([lamda * c for lamda, c in zip(lamda_inequality_i, result.ie)])
     )
 
     return abs_df_dot_delta + abs_equality__err + abs_inequality__err < epsilon
 
 
-def _calculate_mu_i(mu_im1: Union[NumpyVector, None], lamda: NumpyVector):
+def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray):
     if mu_im1 is None:
         return np.abs(lamda)
 
@@ -276,15 +246,14 @@ def _calculate_mu_i(mu_im1: Union[NumpyVector, None], lamda: NumpyVector):
 
 
 def perform_linesearch(
-    f: Function,
-    equality_constraints: List[Function],
-    inequality_constraints: List[Function],
-    mu_equality: Union[NumpyVector, None],
-    mu_inequality: Union[NumpyVector, None],
-    lamda_equality: NumpyVector,
-    lamda_inequality: NumpyVector,
-    delta: NumpyVector,
-    x_jm1: NumpyVector,
+    problem: AbstractProblem,
+    result: Result,
+    mu_equality: Union[np.ndarray, None],
+    mu_inequality: Union[np.ndarray, None],
+    lamda_equality: np.ndarray,
+    lamda_inequality: np.ndarray,
+    delta: np.ndarray,
+    x_jm1: np.ndarray,
 ):
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
@@ -292,20 +261,18 @@ def perform_linesearch(
     # TODO: Cache this function to avoid repeated calls to the objective (and constraints)
     def phi(alpha: np.floating):
         x = x_jm1 + alpha * delta
-        sum_equality = (
-            mu_equality * np.abs(np.array([c(x) for c in equality_constraints]))
-        ).sum()
+        new_result = problem(x)
+        sum_equality = (mu_equality * np.abs(new_result.eq)).sum()
         sum_inequality = (
-            mu_inequality
-            * np.abs(np.array([min(0, c(x)) for c in inequality_constraints]))
+            mu_inequality * np.abs(np.array([min(0, c) for c in new_result.ie]))
         ).sum()
 
-        return f(x) + sum_equality + sum_inequality
+        return new_result.f + sum_equality + sum_inequality
 
     # dphi(0) for unconstrained minimisation = F'(x_jm1)*delta
     # this is extended to constrained minimisation subtracting the
     # weighted constraints at 0.
-    capital_delta = (approx_fprime(x_jm1, f) * delta).sum() - phi(0) + f(x_jm1)
+    capital_delta = (result.df * delta).sum() - phi(0) + result.f
 
     alpha = 1.0
     for _ in range(100):
@@ -330,27 +297,18 @@ def perform_linesearch(
 
 
 def _derivative_lagrangian(
-    f: Function,
-    equality_constraints: List[Function],
-    inequality_constraints: List[Function],
-    x: NumpyVector,
-    lamda_equality: NumpyVector,
-    lamda_inequality: NumpyVector,
+    result: Result,
+    lamda_equality: np.ndarray,
+    lamda_inequality: np.ndarray,
 ):
     c_equality_prime = sum(
-        [
-            lamda * c.derivative(x)
-            for lamda, c in zip(lamda_equality, equality_constraints)
-        ]
+        [lamda * dc for lamda, dc in zip(lamda_equality, result.deq)]
     )
     c_inequality_prime = sum(
-        [
-            lamda * c.derivative(x)
-            for lamda, c in zip(lamda_inequality, inequality_constraints)
-        ]
+        [lamda * dc for lamda, dc in zip(lamda_inequality, result.die)]
     )
 
-    return f.derivative(x) - c_equality_prime - c_inequality_prime
+    return result.df - c_equality_prime - c_inequality_prime
 
 
 def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray):
@@ -365,33 +323,27 @@ def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray):
 
 
 def calculate_new_B(
-    f: Function,
-    equality_constraints: List[Function],
-    inequality_constraints: List[Function],
+    problem: AbstractProblem,
+    result: Result,
     B: np.ndarray,
     x_jm1: np.ndarray,
     x_j: np.ndarray,
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
 ):
+    new_result = problem(x_j)
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
     ksi = (x_j - x_jm1).reshape((x_j.shape[0], 1))
 
     g1 = _derivative_lagrangian(
-        f,
-        equality_constraints,
-        inequality_constraints,
-        x_j,
+        new_result,
         lamda_equality,
         lamda_inequality,
     )
     g2 = _derivative_lagrangian(
-        f,
-        equality_constraints,
-        inequality_constraints,
-        x_jm1,
+        result,
         lamda_equality,
         lamda_inequality,
     )

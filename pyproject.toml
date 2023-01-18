@@ -2,7 +2,7 @@
 requires = ["setuptools", "wheel"]
 
 [project]
-name = "vmcon"
+name = "PyVMCON"
 version = "1.0.0"
 description = "python implementation of the VMCON non-linear constrained optimiser."
 authors = [{name = "Timothy Nunn", email = "timothy.nunn@ukaea.uk"}]
