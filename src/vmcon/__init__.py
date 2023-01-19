@@ -1,5 +1,9 @@
 from .vmcon import solve
-from .exceptions import VMCONConvergenceException, LineSearchConvergenceException
+from .exceptions import (
+    VMCONConvergenceException,
+    LineSearchConvergenceException,
+    QSPSolverException,
+)
 from .problem import AbstractProblem, Problem, Result
 
 __all__ = [
@@ -9,4 +13,5 @@ __all__ = [
     Result,
     VMCONConvergenceException,
     LineSearchConvergenceException,
+    QSPSolverException,
 ]

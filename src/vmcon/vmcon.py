@@ -6,6 +6,7 @@ from .exceptions import (
     VMCONConvergenceException,
     LineSearchConvergenceException,
     _QspSolveException,
+    QSPSolverException,
 )
 from .problem import AbstractProblem, Result
 
@@ -16,9 +17,9 @@ def solve(
     max_iter: int = 10,
     epsilon: float = 1e-8,
 ):
-    """The main solving loop of the VMCON non-linear constrained optimiser."""
+    """The main solving loop of the VMCON non-linear constrained optimiser.
 
-    x = x.squeeze()
+    :param x: array of shape (n,) representing the starting sample point for VMCON solver"""
 
     if len(x.shape) != 1:
         raise ValueError(
@@ -55,9 +56,10 @@ def solve(
         try:
             delta, lamda_equality, lamda_inequality = solve_qsp(problem, result, x, B)
         except _QspSolveException as e:
-            raise VMCONConvergenceException(
+            raise QSPSolverException(
                 f"QSP failed to solve, indicating no feasible solution could be found.",
                 x=x,
+                result=result,
                 lamda_equality=lamda_equality,
                 lamda_inequality=lamda_inequality,
             ) from e
@@ -109,6 +111,7 @@ def solve(
         raise VMCONConvergenceException(
             f"Could not converge on a feasible solution after {max_iter} iterations.",
             x=x,
+            result=result,
             lamda_equality=lamda_equality,
             lamda_inequality=lamda_inequality,
         )
@@ -290,7 +293,11 @@ def perform_linesearch(
 
     else:
         raise LineSearchConvergenceException(
-            "Line search did not converge on an approimate minima"
+            "Line search did not converge on an approimate minima",
+            x=x_jm1,
+            result=result,
+            lamda_equality=lamda_equality,
+            lamda_inequality=lamda_inequality,
         )
 
     return alpha, mu_equality, mu_inequality
