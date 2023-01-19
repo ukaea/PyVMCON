@@ -26,7 +26,11 @@ class AbstractProblem(ABC):
     """A problem defines how VMCON gets data about your specific constrained system.
 
     The problem class is required to provide several properties and data gathering methods
-    but the implementation of these is not prescribed."""
+    but the implementation of these is not prescribed.
+
+    Note that when defining a problem, VMCON will **minimise** an objective function `f(x)`
+    subject to some equality constraints `e(x) = 0` and some inequality constraints `i(x) <= 0`.
+    """
 
     @abstractmethod
     def __call__(self, x: np.ndarray) -> Result:
