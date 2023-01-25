@@ -2,9 +2,9 @@ import pytest
 from typing import NamedTuple
 import numpy as np
 
-from vmcon import solve
-from vmcon.exceptions import VMCONConvergenceException
-from vmcon.problem import Problem
+from pyvmcon import solve
+from pyvmcon.exceptions import VMCONConvergenceException
+from pyvmcon.problem import Problem
 
 
 class VMCONTestAsset(NamedTuple):
@@ -85,8 +85,8 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
     x, lamda_equality, lamda_inequality, _ = solve(
         vmcon_example.problem,
         vmcon_example.initial_x,
-        vmcon_example.max_iter,
-        vmcon_example.epsilon,
+        max_iter=vmcon_example.max_iter,
+        epsilon=vmcon_example.epsilon,
     )
 
     assert x == pytest.approx(vmcon_example.expected_x)
@@ -120,8 +120,8 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
         solve(
             vmcon_example.problem,
             vmcon_example.initial_x,
-            vmcon_example.max_iter,
-            vmcon_example.epsilon,
+            max_iter=vmcon_example.max_iter,
+            epsilon=vmcon_example.epsilon,
         )
 
     assert e.value.x == pytest.approx(vmcon_example.expected_x)

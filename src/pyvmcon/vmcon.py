@@ -14,8 +14,10 @@ from .problem import AbstractProblem, Result
 def solve(
     problem: AbstractProblem,
     x: np.ndarray,
+    *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
+    initial_B: np.ndarray = None,
 ):
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
@@ -36,7 +38,10 @@ def solve(
 
     # The paper uses the B matrix as the
     # running approximation of the Hessian
-    B = np.identity(max(n, m))
+    if initial_B is None:
+        B = np.identity(max(n, m))
+    else:
+        B = initial_B
 
     # These two values being None allows the line
     # search to realise that it is the first iteration
@@ -47,7 +52,8 @@ def solve(
     lamda_equality = None
     lamda_inequality = None
 
-    for _ in range(max_iter):
+    for i in range(max_iter):
+        print(f"Iteration {i}")
         result = problem(x)
 
         # solve the quadratic subproblem to identify
@@ -157,17 +163,10 @@ def solve_qsp(
         - https://www.cis.upenn.edu/~cis515/cis515-11-sl12.pdf (specifically comments
         on page 454 (page 8 of the provided pdf))
     """
-    P = B
-    q = result.df.T
-
-    A = result.deq
-    b = -result.eq
-
-    G = -result.die
-    h = result.ie
-
     delta = cp.Variable(x.shape)
-    problem_statement = cp.Minimize(0.5 * cp.quad_form(delta, P) + q.T @ delta)
+    problem_statement = cp.Minimize(
+        result.f + (delta.T @ result.df) + (0.5 * cp.quad_form(delta, B))
+    )
 
     lamda_equality = np.array([])
     lamda_inequality = np.array([])
@@ -175,13 +174,16 @@ def solve_qsp(
     if problem.has_inequality and problem.has_equality:
         problem = cp.Problem(
             problem_statement,
-            [G @ delta <= h, A @ delta == b],
+            [
+                (result.die @ delta) + result.ie >= 0,
+                (result.deq @ delta) + result.eq == 0,
+            ],
         )
 
         problem.solve()
 
         if any(i.dual_value is None for i in problem.constraints):
-            raise _QspSolveException("QSP failed to solve.")
+            raise _QspSolveException(f"QSP failed to solve: {problem.status}")
 
         lamda_inequality = problem.constraints[0].dual_value
         lamda_equality = -problem.constraints[1].dual_value
@@ -189,26 +191,26 @@ def solve_qsp(
     elif problem.has_inequality and not problem.has_equality:
         problem = cp.Problem(
             problem_statement,
-            [G @ delta <= h],
+            [(result.die @ delta) + result.ie >= 0],
         )
 
         problem.solve()
 
         if problem.constraints[0].dual_value is None:
-            raise _QspSolveException("QSP failed to solve.")
+            raise _QspSolveException(f"QSP failed to solve: {problem.status}")
 
         lamda_inequality = problem.constraints[0].dual_value
 
     elif not problem.has_inequality and problem.has_equality:
         problem = cp.Problem(
             problem_statement,
-            [A @ delta == b],
+            [(result.deq @ delta) + result.eq == 0],
         )
 
         problem.solve()
 
         if problem.constraints[0].dual_value is None:
-            raise _QspSolveException("QSP failed to solve.")
+            raise _QspSolveException(f"QSP failed to solve: {problem.status}")
 
         lamda_equality = -problem.constraints[0].dual_value
 
