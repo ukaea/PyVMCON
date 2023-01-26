@@ -9,14 +9,14 @@ from pyvmcon.problem import Problem
 
 class VMCONTestAsset(NamedTuple):
     problem: Problem
-
     initial_x: np.ndarray
-    max_iter: int
-    epsilon: float
-
     expected_x: np.ndarray
     expected_lamda_equality: np.ndarray
     expected_lamda_inequality: np.ndarray
+    lbs: np.ndarray = None
+    ubs: np.ndarray = None
+    max_iter: int = 10
+    epsilon: float = 1e-8
 
 
 @pytest.mark.parametrize(
@@ -33,11 +33,27 @@ class VMCONTestAsset(NamedTuple):
                 [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
             ),
             initial_x=np.array([2.0, 2.0]),
-            max_iter=10,
-            epsilon=1e-8,
             expected_x=[8.228756e-1, 9.114378e-1],
             expected_lamda_equality=[-1.594491],
             expected_lamda_inequality=[1.846591],
+        ),
+        # Test 1 detailed in ANL-80-64 page 25
+        # with added, unintrusive, bounds
+        VMCONTestAsset(
+            Problem(
+                lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2,
+                lambda x: np.array([2 * (x[0] - 2), 2 * (x[1] - 1)]),
+                [lambda x: x[0] - (2 * x[1]) + 1],
+                [lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1],
+                [lambda _: np.array([1, -2])],
+                [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
+            ),
+            initial_x=np.array([2.0, 2.0]),
+            expected_x=[8.228756e-1, 9.114378e-1],
+            expected_lamda_equality=[-1.594491],
+            expected_lamda_inequality=[1.846591],
+            lbs=np.array([-10, -10]),
+            ubs=np.array([10, 10]),
         ),
         # Test 2 detailed in ANL-80-64 page 28
         VMCONTestAsset(
@@ -56,8 +72,6 @@ class VMCONTestAsset(NamedTuple):
                 ],
             ),
             initial_x=np.array([2.0, 2.0]),
-            max_iter=10,
-            epsilon=1e-8,
             expected_x=[1.6649685472365443, 0.55404867491788852],
             expected_lamda_equality=[],
             expected_lamda_inequality=[0, 0.80489557193146243],
@@ -73,7 +87,6 @@ class VMCONTestAsset(NamedTuple):
                 [],
             ),
             initial_x=np.array([1.0, 1.0]),
-            max_iter=10,
             epsilon=2e-8,
             expected_x=[0.5 * 2**0.5, 0.5 * 2**0.5],  # Shouldn't these be negative?
             expected_lamda_equality=[2 ** (-0.5)],
@@ -85,6 +98,8 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
     x, lamda_equality, lamda_inequality, _ = solve(
         vmcon_example.problem,
         vmcon_example.initial_x,
+        vmcon_example.lbs,
+        vmcon_example.ubs,
         max_iter=vmcon_example.max_iter,
         epsilon=vmcon_example.epsilon,
     )
@@ -108,7 +123,6 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
             ),
             initial_x=np.array([2.0, 2.0]),
             max_iter=5,
-            epsilon=1e-8,
             expected_x=[2.3999994310874733, 0.6],
             expected_lamda_equality=[0.0],
             expected_lamda_inequality=[0.0],

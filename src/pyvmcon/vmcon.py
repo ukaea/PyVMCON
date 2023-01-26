@@ -14,6 +14,8 @@ from .problem import AbstractProblem, Result
 def solve(
     problem: AbstractProblem,
     x: np.ndarray,
+    lbs: np.ndarray = None,
+    ubs: np.ndarray = None,
     *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
@@ -28,6 +30,12 @@ def solve(
 
     x : ndarray
         The initial starting `x` of VMCON
+
+    lbs : ndarray
+        Lower bounds of `x`. If `None`, no lower bounds are applied
+
+    ubs : ndarray
+        Upper bounds of `x`. If `None`, no upper bounds are applied
 
     max_iter : int
         The maximum iterations of VMCON before an exception is raised
@@ -77,7 +85,9 @@ def solve(
         # our search direction and the Lagrange multipliers
         # for our constraints
         try:
-            delta, lamda_equality, lamda_inequality = solve_qsp(problem, result, x, B)
+            delta, lamda_equality, lamda_inequality = solve_qsp(
+                problem, result, x, B, lbs, ubs
+            )
         except _QspSolveException as e:
             raise QSPSolverException(
                 f"QSP failed to solve, indicating no feasible solution could be found.",
@@ -147,6 +157,8 @@ def solve_qsp(
     result: Result,
     x: np.ndarray,
     B: np.ndarray,
+    lbs: np.ndarray,
+    ubs: np.ndarray,
 ):
     """
     Q(d) = f + dTf' + (1/2)dTBd
@@ -185,11 +197,20 @@ def solve_qsp(
         result.f + (1 / 2) * cp.quad_form(delta, B) + (result.df.T @ delta)
     )
 
+    equality_index = 0
+
     constraints = []
     if problem.has_inequality:
-        constraints.append(((result.die @ delta) + result.ie >= 0))
+        equality_index += 1
+        constraints.append((result.die @ delta) + result.ie >= 0)
+    if lbs is not None:
+        equality_index += 1
+        constraints.append(lbs <= delta)
+    if ubs is not None:
+        equality_index += 1
+        constraints.append(delta <= ubs)
     if problem.has_equality:
-        constraints.append(((result.deq @ delta) + result.eq == 0))
+        constraints.append((result.deq @ delta) + result.eq == 0)
 
     qsp = cp.Problem(problem_statement, constraints or None)
     qsp.solve()
@@ -202,13 +223,13 @@ def solve_qsp(
 
     if problem.has_inequality and problem.has_equality:
         lamda_inequality = qsp.constraints[0].dual_value
-        lamda_equality = -qsp.constraints[1].dual_value
+        lamda_equality = -qsp.constraints[equality_index].dual_value
 
     elif problem.has_inequality and not problem.has_equality:
         lamda_inequality = qsp.constraints[0].dual_value
 
     elif not problem.has_inequality and problem.has_equality:
-        lamda_equality = -qsp.constraints[0].dual_value
+        lamda_equality = -qsp.constraints[equality_index].dual_value
 
     return delta.value, lamda_equality, lamda_inequality
 
