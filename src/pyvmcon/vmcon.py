@@ -21,7 +21,24 @@ def solve(
 ):
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
-    :param x: array of shape (n,) representing the starting sample point for VMCON solver"""
+    Parameters
+    ----------
+    problem : AbstractProblem
+        Defines the system to be minimised
+
+    x : ndarray
+        The initial starting `x` of VMCON
+
+    max_iter : int
+        The maximum iterations of VMCON before an exception is raised
+
+    epsilon : float
+        The tolerance used to test if VMCON has converged
+
+    initial_B : ndarray
+        Initial estimate of the Hessian matrix `B`. If `None`, `B` is the
+        identity matrix of shape `(max(n,m), max(n,m))`.
+    """
 
     if len(x.shape) != 1:
         raise ValueError(
@@ -165,61 +182,33 @@ def solve_qsp(
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(
-        result.f + (delta.T @ result.df) + (0.5 * cp.quad_form(delta, B))
+        result.f + (1 / 2) * cp.quad_form(delta, B) + (result.df.T @ delta)
     )
+
+    constraints = []
+    if problem.has_inequality:
+        constraints.append(((result.die @ delta) + result.ie >= 0))
+    if problem.has_equality:
+        constraints.append(((result.deq @ delta) + result.eq == 0))
+
+    qsp = cp.Problem(problem_statement, constraints or None)
+    qsp.solve()
+
+    if delta.value is None:
+        raise _QspSolveException(f"QSP failed to solve: {qsp.status}")
 
     lamda_equality = np.array([])
     lamda_inequality = np.array([])
 
     if problem.has_inequality and problem.has_equality:
-        problem = cp.Problem(
-            problem_statement,
-            [
-                (result.die @ delta) + result.ie >= 0,
-                (result.deq @ delta) + result.eq == 0,
-            ],
-        )
-
-        problem.solve()
-
-        if any(i.dual_value is None for i in problem.constraints):
-            raise _QspSolveException(f"QSP failed to solve: {problem.status}")
-
-        lamda_inequality = problem.constraints[0].dual_value
-        lamda_equality = -problem.constraints[1].dual_value
+        lamda_inequality = qsp.constraints[0].dual_value
+        lamda_equality = -qsp.constraints[1].dual_value
 
     elif problem.has_inequality and not problem.has_equality:
-        problem = cp.Problem(
-            problem_statement,
-            [(result.die @ delta) + result.ie >= 0],
-        )
-
-        problem.solve()
-
-        if problem.constraints[0].dual_value is None:
-            raise _QspSolveException(f"QSP failed to solve: {problem.status}")
-
-        lamda_inequality = problem.constraints[0].dual_value
+        lamda_inequality = qsp.constraints[0].dual_value
 
     elif not problem.has_inequality and problem.has_equality:
-        problem = cp.Problem(
-            problem_statement,
-            [(result.deq @ delta) + result.eq == 0],
-        )
-
-        problem.solve()
-
-        if problem.constraints[0].dual_value is None:
-            raise _QspSolveException(f"QSP failed to solve: {problem.status}")
-
-        lamda_equality = -problem.constraints[0].dual_value
-
-    else:
-        problem = cp.Problem(problem_statement)
-
-        problem.solve()
-
-        # Unclear whether this can ever fail to solve?
+        lamda_equality = -qsp.constraints[0].dual_value
 
     return delta.value, lamda_equality, lamda_inequality
 
