@@ -36,20 +36,23 @@ class VMCONConvergenceException(Exception):
 
 class _QspSolveException(Exception):
     """An exception that should only be used internally
-    to identify that the QSP has failed to solve."""
+    to identify that the QSP has failed to solve.
+    """
 
     pass
 
 
 class QSPSolverException(VMCONConvergenceException):
-    """Indicates VMCON failed to converge because the QSP Solver was unable
-    to solve."""
+    """Indicates VMCON failed to solve because the QSP Solver was unable
+    to solve.
+    """
 
     pass
 
 
 class LineSearchConvergenceException(VMCONConvergenceException):
     """Indicates the line search portion of VMCON was unable to
-    converge on a solution within a pre-defined number of iterations"""
+    solve within a pre-defined number of iterations
+    """
 
     pass

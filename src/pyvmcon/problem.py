@@ -15,11 +15,11 @@ class Result(NamedTuple):
     eq: np.ndarray
     """1D array of the values of the equality constraints with shape"""
     deq: np.ndarray
-    """1D array of the derivatives of the equality constraints"""
+    """2D array of the derivatives of the equality constraints wrt each component of `x`"""
     ie: np.ndarray
     """1D array of the values of the inequality constraints"""
     die: np.ndarray
-    """1D array of the derivatives of the inequality constraints"""
+    """2D array of the derivatives of the inequality constraints wrt each component of `x`"""
 
 
 class AbstractProblem(ABC):
