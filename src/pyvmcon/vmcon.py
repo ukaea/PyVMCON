@@ -176,6 +176,7 @@ def solve_qsp(
     B: np.ndarray,
     lbs: np.ndarray,
     ubs: np.ndarray,
+    tolerance=1e-4,
 ):
     """
     Q(d) = f + dTf' + (1/2)dTBd
@@ -230,7 +231,7 @@ def solve_qsp(
         constraints.append((result.deq @ delta) + result.eq == 0)
 
     qsp = cp.Problem(problem_statement, constraints or None)
-    qsp.solve(verbose=True, solver="OSQP", eps_rel=1e-2)
+    qsp.solve(verbose=True, solver="OSQP", eps_rel=tolerance)
 
     if delta.value is None:
         raise _QspSolveException(f"QSP failed to solve: {qsp.status}")
