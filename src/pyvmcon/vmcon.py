@@ -1,4 +1,5 @@
 from typing import Union
+import logging
 import numpy as np
 import cvxpy as cp
 
@@ -9,6 +10,10 @@ from .exceptions import (
     QSPSolverException,
 )
 from .problem import AbstractProblem, Result
+
+logger = logging.getLogger(__name__)
+s_handler = logging.StreamHandler()
+s_handler.setLevel(logging.WARNING)
 
 
 def solve(
@@ -51,6 +56,18 @@ def solve(
     if len(x.shape) != 1:
         raise ValueError(
             "Input vector `x` is not a 1D array or an nD array with only 1 non-singleton dimension"
+        )
+
+    if lbs is not None and (x < lbs).any():
+        logger.warning(
+            f"""x is initially in an infeasible region because at least one x is lower than a lower bound:
+            {x - lbs = }"""
+        )
+
+    if ubs is not None and (x > ubs).any():
+        logger.warning(
+            f"""x is initially in an infeasible region because at least one x is greater than an upper bound
+            {ubs - x = }"""
         )
 
     # n is denoted in the VMCON paper
@@ -290,7 +307,7 @@ def perform_linesearch(
     capital_delta = (result.df * delta).sum() - phi(0) + result.f
 
     alpha = 1.0
-    for _ in range(100):
+    for _ in range(10):
         # exit if we satisfy the Armijo condition
         if phi(alpha) <= phi(0) + 0.1 * alpha * capital_delta:
             break
@@ -369,6 +386,12 @@ def calculate_new_B(
     gamma = (g1 - g2).reshape((x_j.shape[0], 1))
 
     gamma = _powells_gamma(gamma, ksi, B)
+
+    if (gamma == 0).all():
+        gamma[:] = 1e-10
+
+    if (ksi == 0).all():
+        ksi[:] = 1e-10
 
     B = (
         B
