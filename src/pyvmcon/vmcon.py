@@ -24,6 +24,7 @@ def solve(
     *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
+    qsp_tolerence: float = 1e-4,
     initial_B: np.ndarray = None,
 ):
     """The main solving loop of the VMCON non-linear constrained optimiser.
@@ -103,7 +104,7 @@ def solve(
         # for our constraints
         try:
             delta, lamda_equality, lamda_inequality = solve_qsp(
-                problem, result, x, B, lbs, ubs
+                problem, result, x, B, lbs, ubs, qsp_tolerence
             )
         except _QspSolveException as e:
             raise QSPSolverException(
@@ -176,7 +177,7 @@ def solve_qsp(
     B: np.ndarray,
     lbs: np.ndarray,
     ubs: np.ndarray,
-    tolerance=1e-4,
+    tolerance: float,
 ):
     """
     Q(d) = f + dTf' + (1/2)dTBd
@@ -260,14 +261,14 @@ def convergence_test(
     epsilon: float,
 ) -> bool:
     abs_df_dot_delta = abs(np.dot(result.df, delta_j))
-    abs_equality__err = abs(
-        np.sum([lamda * c for lamda, c in zip(lamda_equality_i, result.eq)])
+    abs_equality_err = np.sum(
+        [abs(lamda * c) for lamda, c in zip(lamda_equality_i, result.eq)]
     )
-    abs_inequality__err = abs(
-        np.sum([lamda * c for lamda, c in zip(lamda_inequality_i, result.ie)])
+    abs_inequality_err = np.sum(
+        [abs(lamda * c) for lamda, c in zip(lamda_inequality_i, result.ie)]
     )
 
-    return abs_df_dot_delta + abs_equality__err + abs_inequality__err < epsilon
+    return (abs_df_dot_delta + abs_equality_err + abs_inequality_err) < epsilon
 
 
 def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray):
