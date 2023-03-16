@@ -232,7 +232,7 @@ def solve_qsp(
         constraints.append((result.deq @ delta) + result.eq == 0)
 
     qsp = cp.Problem(problem_statement, constraints or None)
-    qsp.solve(verbose=False, solver="OSQP", eps_rel=tolerance)
+    qsp.solve(verbose=False, solver=cp.OSQP, eps_rel=tolerance)
 
     if delta.value is None:
         raise _QspSolveException(f"QSP failed to solve: {qsp.status}")
