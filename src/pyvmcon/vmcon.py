@@ -213,7 +213,7 @@ def solve_qsp(
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(
-        result.f + (1 / 2) * cp.quad_form(delta, B) + (result.df.T @ delta)
+        result.f + (0.5 * cp.quad_form(delta, B)) + (delta.T @ result.df.T)
     )
 
     equality_index = 0
@@ -232,7 +232,7 @@ def solve_qsp(
         constraints.append((result.deq @ delta) + result.eq == 0)
 
     qsp = cp.Problem(problem_statement, constraints or None)
-    qsp.solve(verbose=True, solver="OSQP", eps_rel=tolerance)
+    qsp.solve(verbose=False, solver="OSQP", eps_rel=tolerance)
 
     if delta.value is None:
         raise _QspSolveException(f"QSP failed to solve: {qsp.status}")
@@ -306,20 +306,18 @@ def perform_linesearch(
     # dphi(0) for unconstrained minimisation = F'(x_jm1)*delta
     # this is extended to constrained minimisation subtracting the
     # weighted constraints at 0.
-    capital_delta = (result.df * delta).sum() - phi(0) + result.f
+    capital_delta = phi(1) - phi(0)
 
     alpha = 1.0
     for _ in range(10):
         # exit if we satisfy the Armijo condition
-        if phi(alpha) <= phi(0) + 0.1 * alpha * capital_delta:
+        # or the Kovari condition
+        if phi(alpha) <= phi(0) + 0.1 * alpha * capital_delta or phi(alpha) > phi(0):
             break
 
-        alpha = max(
+        alpha = min(
             0.1 * alpha,
-            -0.5
-            * alpha**2
-            * capital_delta
-            / (phi(alpha) - phi(0) - (alpha * capital_delta)),
+            -(alpha**2) / (2 * (phi(alpha) - phi(0) - capital_delta * alpha)),
         )
 
     else:
@@ -390,15 +388,17 @@ def calculate_new_B(
     gamma = _powells_gamma(gamma, ksi, B)
 
     if (gamma == 0).all():
+        logger.warning("All gamma components are 0")
         gamma[:] = 1e-10
 
     if (ksi == 0).all():
+        logger.warning("All xi (ksi) components are 0")
         ksi[:] = 1e-10
 
     B = (
         B
         - ((B @ ksi @ ksi.T @ B) / (ksi.T @ B @ ksi))
-        + ((gamma @ gamma.T) / (gamma.T @ ksi))
+        + ((gamma @ gamma.T) / (ksi.T @ gamma))
     )  # eqn 8
 
     return B
