@@ -213,7 +213,9 @@ def solve_qsp(
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(
-        result.f + (0.5 * cp.quad_form(delta, B)) + (delta.T @ result.df.T)
+        result.f
+        + (0.5 * cp.quad_form(delta, B, assume_PSD=True))
+        + (delta.T @ result.df)
     )
 
     equality_index = 0
