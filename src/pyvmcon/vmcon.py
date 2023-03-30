@@ -294,32 +294,33 @@ def perform_linesearch(
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
 
-    # TODO: Cache this function to avoid repeated calls to the objective (and constraints)
-    def phi(alpha: np.floating):
-        x = x_jm1 + alpha * delta
-        new_result = problem(x)
-        sum_equality = (mu_equality * np.abs(new_result.eq)).sum()
+    def phi(result: Result):
+        sum_equality = (mu_equality * np.abs(result.eq)).sum()
         sum_inequality = (
-            mu_inequality * np.abs(np.array([min(0, c) for c in new_result.ie]))
+            mu_inequality * np.abs(np.array([min(0, c) for c in result.ie]))
         ).sum()
 
-        return new_result.f + sum_equality + sum_inequality
+        return result.f + sum_equality + sum_inequality
 
-    # dphi(0) for unconstrained minimisation = F'(x_jm1)*delta
-    # this is extended to constrained minimisation subtracting the
-    # weighted constraints at 0.
-    capital_delta = phi(1) - phi(0)
+    phi_0 = phi(result)
+
+    result_at_1 = problem(x_jm1 + delta)
+    # powell suggests this Delta due to possible
+    # discontinuity in the derivative at alpha=0
+    capital_delta = phi(result_at_1) - phi_0
 
     alpha = 1.0
     for _ in range(10):
         # exit if we satisfy the Armijo condition
         # or the Kovari condition
-        if phi(alpha) <= phi(0) + 0.1 * alpha * capital_delta or phi(alpha) > phi(0):
+        new_result = problem(x_jm1 + alpha * delta) if alpha != 1.0 else result_at_1
+        phi_alpha = phi(new_result)
+        if phi_alpha <= phi_0 + 0.1 * alpha * capital_delta or phi_alpha > phi_0:
             break
 
         alpha = min(
             0.1 * alpha,
-            -(alpha**2) / (2 * (phi(alpha) - phi(0) - capital_delta * alpha)),
+            -(alpha**2) / (2 * (phi_alpha - phi_0 - capital_delta * alpha)),
         )
 
     else:
