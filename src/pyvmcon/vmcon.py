@@ -205,11 +205,6 @@ def solve_qsp(
         - h = the negative of the value of the constraints at x^(j-1)
         - A = derivative of the equality constraints at x^(j-1)
         - b = the negative value of the constraints at x^(j-1)
-
-    References:
-        - https://courses.csail.mit.edu/6.867/wiki/images/a/a7/Qp-cvxopt.pdf
-        - https://www.cis.upenn.edu/~cis515/cis515-11-sl12.pdf (specifically comments
-        on page 454 (page 8 of the provided pdf))
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(
@@ -258,16 +253,39 @@ def solve_qsp(
 def convergence_test(
     result: Result,
     delta_j: np.ndarray,
-    lamda_equality_i: np.ndarray,
-    lamda_inequality_i: np.ndarray,
+    lamda_equality: np.ndarray,
+    lamda_inequality: np.ndarray,
     epsilon: float,
 ) -> bool:
+    """Test if the convergence criteria of VMCON have been met.
+    Equation 11 of the VMCON paper. Note this tests convergence at the
+    point (j-1)th evaluation point ($x_(j-1)$).
+
+    Parameters
+    ----------
+    result : Result
+        Contains the data for the (j-1)th evaluation point.
+
+    delta_j : ndarray
+        The search direction for the jth evaluation point.
+
+    lambda_equality : ndarray
+        The Lagrange multipliers for equality constraints for the jth
+        evaluation point.
+
+    lambda_inequality : ndarray
+        The Lagrange multipliers for inequality constraints for the jth
+        evaluation point.
+
+    epsilon : float
+        The user-supplied error tolerance.
+    """
     abs_df_dot_delta = abs(np.dot(result.df, delta_j))
     abs_equality_err = np.sum(
-        [abs(lamda * c) for lamda, c in zip(lamda_equality_i, result.eq)]
+        [abs(lamda * c) for lamda, c in zip(lamda_equality, result.eq)]
     )
     abs_inequality_err = np.sum(
-        [abs(lamda * c) for lamda, c in zip(lamda_inequality_i, result.ie)]
+        [abs(lamda * c) for lamda, c in zip(lamda_inequality, result.ie)]
     )
 
     return (abs_df_dot_delta + abs_equality_err + abs_inequality_err) < epsilon
@@ -305,8 +323,10 @@ def perform_linesearch(
     phi_0 = phi(result)
 
     result_at_1 = problem(x_jm1 + delta)
+
     # powell suggests this Delta due to possible
     # discontinuity in the derivative at alpha=0
+    # Powell 1978
     capital_delta = phi(result_at_1) - phi_0
 
     alpha = 1.0
