@@ -128,7 +128,7 @@ def solve(
 
         # perform a linesearch along the search direction
         # to mitigate the impact of poor starting conditions.
-        alpha, mu_equality, mu_inequality = perform_linesearch(
+        alpha, mu_equality, mu_inequality, new_result = perform_linesearch(
             problem,
             result,
             mu_equality,
@@ -146,8 +146,8 @@ def solve(
 
         # Revise matrix B
         B = calculate_new_B(
-            problem,
             result,
+            new_result,
             B,
             x,
             xj,
@@ -332,7 +332,7 @@ def perform_linesearch(
             lamda_inequality=lamda_inequality,
         )
 
-    return alpha, mu_equality, mu_inequality
+    return alpha, mu_equality, mu_inequality, new_result
 
 
 def _derivative_lagrangian(
@@ -362,15 +362,14 @@ def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray):
 
 
 def calculate_new_B(
-    problem: AbstractProblem,
     result: Result,
+    new_result: Result,
     B: np.ndarray,
     x_jm1: np.ndarray,
     x_j: np.ndarray,
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
 ):
-    new_result = problem(x_j)
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
