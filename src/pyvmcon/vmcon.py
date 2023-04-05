@@ -12,8 +12,6 @@ from .exceptions import (
 from .problem import AbstractProblem, Result
 
 logger = logging.getLogger(__name__)
-s_handler = logging.StreamHandler()
-s_handler.setLevel(logging.WARNING)
 
 
 def solve(
@@ -58,16 +56,18 @@ def solve(
         raise ValueError("Input vector `x` is not a 1D array")
 
     if lbs is not None and (x < lbs).any():
-        logger.warning(
-            f"""x is initially in an infeasible region because at least one x is lower than a lower bound:
-            {x - lbs = }"""
+        msg = "x is initially in an infeasible region because at least one x is lower than a lower bound"
+        logger.error(
+            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(x, lbs))} (0-based indexing)"
         )
+        raise ValueError(msg)
 
     if ubs is not None and (x > ubs).any():
-        logger.warning(
-            f"""x is initially in an infeasible region because at least one x is greater than an upper bound
-            {ubs - x = }"""
+        msg = "x is initially in an infeasible region because at least one x is greater than an upper bound"
+        logger.error(
+            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(ubs, x))} (0-based indexing)"
         )
+        raise ValueError(msg)
 
     # n is denoted in the VMCON paper
     # as the number of inputs the function
@@ -422,3 +422,14 @@ def calculate_new_B(
     )  # eqn 8
 
     return B
+
+
+def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray):
+    """Return the indices of the out of bounds variables"""
+
+    out_of_bounds = []
+    for i, boolean in enumerate((higher - lower) < 0):
+        if boolean:
+            out_of_bounds.append(str(i))
+
+    return out_of_bounds
