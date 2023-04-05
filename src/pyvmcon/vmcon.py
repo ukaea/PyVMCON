@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 import logging
 import numpy as np
 import cvxpy as cp
@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 def solve(
     problem: AbstractProblem,
     x: np.ndarray,
-    lbs: np.ndarray = None,
-    ubs: np.ndarray = None,
+    lbs: Optional[np.ndarray] = None,
+    ubs: Optional[np.ndarray] = None,
     *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
     qsp_tolerence: float = 1e-4,
-    initial_B: np.ndarray = None,
+    initial_B: Optional[np.ndarray] = None,
 ):
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
@@ -50,6 +50,20 @@ def solve(
     initial_B : ndarray
         Initial estimate of the Hessian matrix `B`. If `None`, `B` is the
         identity matrix of shape `(max(n,m), max(n,m))`.
+
+    Returns
+    -------
+    x : ndarray
+        The solution vector which VMCON converges to.
+
+    lamda_equality : ndarray
+        The Lagrange multipliers for the equality constraints at the solution vector.
+
+    lamda_inequality : ndarray
+        The Lagrange multipliers for the inequality constraints at the solution vector.
+
+    result : Result
+        The result from running the solution vector through the problem.
     """
 
     if len(x.shape) != 1:
