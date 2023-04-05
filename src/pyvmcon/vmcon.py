@@ -55,9 +55,7 @@ def solve(
     """
 
     if len(x.shape) != 1:
-        raise ValueError(
-            "Input vector `x` is not a 1D array or an nD array with only 1 non-singleton dimension"
-        )
+        raise ValueError("Input vector `x` is not a 1D array")
 
     if lbs is not None and (x < lbs).any():
         logger.warning(
