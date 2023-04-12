@@ -187,36 +187,39 @@ def solve_qsp(
     result: Result,
     x: np.ndarray,
     B: np.ndarray,
-    lbs: np.ndarray,
-    ubs: np.ndarray,
+    lbs: Optional[np.ndarray],
+    ubs: Optional[np.ndarray],
     tolerance: float,
 ):
-    """
-    Q(d) = f + dTf' + (1/2)dTBd
+    """Solves the quadratic programming problem detailed in equation 4 and 5
+    of the VMCON paper.
 
-    f can be ignored here since it will have no effect on the minimisation
-    of Q(d).
+    The QSP is solved using cvxpy. cvxpy requires the problem be convex, which is
+    ensured by equation 9 of the VMCON paper.
 
-    The problem will be defined in its standard form:
-        Q(d) = (1/2)dTBd + f'Td
+    Parameters
+    ----------
+    problem : AbstractProblem
+        The current minimisation problem being solved.
 
-    which, for the sake of continuity with the provided references, is:
-        (1/2)xTPx + qTx
-    where:
-        x = d
-        P = B
-        q = f'
+    result : Result
+        Contains the data for the (j-1)th evaluation point.
 
-    The notation of the constraints on this QSP are as follows:
-        - Gx <= h
-        - Ax = b
+    x : ndarray
+        The (j-1)th evaluation point.
 
-    in this problem,
-        - G = derivative of the inequality constraints
-        (assumes all inequality constraints are <=) at x^(j-1)
-        - h = the negative of the value of the constraints at x^(j-1)
-        - A = derivative of the equality constraints at x^(j-1)
-        - b = the negative value of the constraints at x^(j-1)
+    B : ndarray
+        The current approximation of the Hessian matrix.
+
+    lbs : ndarray
+        The lower bounds of `x`.
+
+    ubs : ndarray
+        The upper bounds of `x`.
+
+    tolerance : float
+        The relative tolerance of the QSP solver.
+        See https://www.cvxpy.org/tutorial/advanced/index.html#setting-solver-options `eps_rel`.
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(
