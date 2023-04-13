@@ -1,0 +1,17 @@
+name: PyVMCON quality assurance workflow
+on:
+  pull_request:
+  push:
+
+jobs:
+  test_pyvmcon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+      - uses: actions/checkout@v3
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run pre-commit
+        run: pre-commit run --all-files

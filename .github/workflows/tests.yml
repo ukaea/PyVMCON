@@ -1,0 +1,22 @@
+name: PyVMCON test workflow
+on:
+  pull_request:
+  push:
+
+jobs:
+  test_pyvmcon:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        py_version: [3.8, 3.10, 3.11]
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py_version }}
+      - uses: actions/checkout@v3
+      - name: Install pytest
+        run: pip install pytest
+      - name: Install PyVMCON
+        run: pip install .
+      - name: Run pytest
+        run: pytest tests/
