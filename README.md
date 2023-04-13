@@ -1,2 +1,2 @@
 # PyVMCON
-A Python implementation of the VMCON [1] nonlinear constrained optimiser in Python.
+A Python implementation of the VMCON nonlinear constrained optimiser in Python.
