@@ -1,7 +1,17 @@
 name: PyVMCON documentation deployment workflow
+
 on:
   push:
     # branches: [$default-branch]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-docs:
