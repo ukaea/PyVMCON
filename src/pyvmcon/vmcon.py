@@ -274,7 +274,7 @@ def convergence_test(
 ) -> bool:
     """Test if the convergence criteria of VMCON have been met.
     Equation 11 of the VMCON paper. Note this tests convergence at the
-    point (j-1)th evaluation point ($x_(j-1)$).
+    point (j-1)th evaluation point.
 
     Parameters
     ----------
@@ -317,13 +317,29 @@ def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray):
 def perform_linesearch(
     problem: AbstractProblem,
     result: Result,
-    mu_equality: Union[np.ndarray, None],
-    mu_inequality: Union[np.ndarray, None],
+    mu_equality: Optional[np.ndarray],
+    mu_inequality: Optional[np.ndarray],
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
     delta: np.ndarray,
     x_jm1: np.ndarray,
 ):
+    """Performs the line search on equation 6 (to minimise phi).
+
+    Parameters
+    ----------
+    problem : AbstractProblem
+        The current minimisation problem being solved.
+
+    result : Result
+        Contains the data for the (j-1)th evaluation point.
+
+    mu_equality : ndarray
+        The mu values for the equality constraints.
+
+    mu_inequality : ndarray
+        The mu values for the inequality constraints.
+    """
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
 
