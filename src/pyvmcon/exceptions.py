@@ -20,11 +20,23 @@ class VMCONConvergenceException(Exception):
         """Constructor for the exception raised when VMCON cannot converge
         on a feasible solution.
 
-        :param args: arguments passed to the Exception __init__() method. For example, an error message.
-        :param x: the lastest `x` vector considered by the optimisation loop.
-        :param result: the result of evaluating the problem with `x`
-        :param lamda_equality: the latest Lagrange multipliers for equality constraints calculated.
-        :param lamda_inequality: the latest Lagrange multipliers for equality constraints calculated.
+        Parameters
+        ----------
+        args : List[object]
+            arguments passed to the Exception __init__() method.
+            For example, an error message.
+
+        x : Optional[ndarray]
+            The (j-1)th `x` vector.
+
+        result : Optional[Result]
+            The result of evaluating the (j-1)th `x`.
+
+        lamda_equality : Optional[ndarray]
+            The jth Lagrange multipliers for the equality constraints
+
+        lamda_inequality : Optional[ndarray]
+            The jth Lagrange multipliers for the inequality constraints
         """
         super().__init__(*args)
 

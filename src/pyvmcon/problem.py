@@ -15,21 +15,26 @@ class Result(NamedTuple):
     eq: np.ndarray
     """1D array of the values of the equality constraints with shape"""
     deq: np.ndarray
-    """2D array of the derivatives of the equality constraints wrt each component of `x`"""
+    """2D array of the derivatives of the equality constraints wrt
+    each component of `x`
+    """
     ie: np.ndarray
     """1D array of the values of the inequality constraints"""
     die: np.ndarray
-    """2D array of the derivatives of the inequality constraints wrt each component of `x`"""
+    """2D array of the derivatives of the inequality constraints wrt
+    each component of `x`
+    """
 
 
 class AbstractProblem(ABC):
     """A problem defines how VMCON gets data about your specific constrained system.
 
-    The problem class is required to provide several properties and data gathering methods
-    but the implementation of these is not prescribed.
+    The problem class is required to provide several properties and data gathering
+    methods but the implementation of these is not prescribed.
 
-    Note that when defining a problem, VMCON will **minimise** an objective function `f(x)`
-    subject to some equality constraints `e(x) = 0` and some inequality constraints `i(x) <= 0`.
+    Note that when defining a problem, VMCON will **minimise** an objective function
+    `f(x)` subject to some equality constraints `e(x) = 0` and some inequality
+    constraints `i(x) <= 0`.
     """
 
     @abstractmethod

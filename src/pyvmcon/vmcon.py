@@ -70,16 +70,16 @@ def solve(
         raise ValueError("Input vector `x` is not a 1D array")
 
     if lbs is not None and (x < lbs).any():
-        msg = "x is initially in an infeasible region because at least one x is lower than a lower bound"
+        msg = "x is initially in an infeasible region because at least one x is lower than a lower bound"  # noqa: E501
         logger.error(
-            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(x, lbs))} (0-based indexing)"
+            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(x, lbs))} (0-based indexing)"  # noqa: E501
         )
         raise ValueError(msg)
 
     if ubs is not None and (x > ubs).any():
-        msg = "x is initially in an infeasible region because at least one x is greater than an upper bound"
+        msg = "x is initially in an infeasible region because at least one x is greater than an upper bound"  # noqa: E501
         logger.error(
-            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(ubs, x))} (0-based indexing)"
+            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(ubs, x))} (0-based indexing)"  # noqa: E501
         )
         raise ValueError(msg)
 
@@ -120,7 +120,7 @@ def solve(
             )
         except _QspSolveException as e:
             raise QSPSolverException(
-                f"QSP failed to solve, indicating no feasible solution could be found.",
+                "QSP failed to solve, indicating no feasible solution could be found.",
                 x=x,
                 result=result,
                 lamda_equality=lamda_equality,
@@ -219,7 +219,8 @@ def solve_qsp(
 
     tolerance : float
         The relative tolerance of the QSP solver.
-        See https://www.cvxpy.org/tutorial/advanced/index.html#setting-solver-options `eps_rel`.
+        See https://www.cvxpy.org/tutorial/advanced/index.html#setting-solver-options
+        `eps_rel`.
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(

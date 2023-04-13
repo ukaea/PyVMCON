@@ -6,7 +6,7 @@ Python implementation of the [VMCON]_ non-linear constrained optimisation algori
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
+
    vmcon
    modules
 
