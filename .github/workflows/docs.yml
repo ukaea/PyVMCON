@@ -1,0 +1,39 @@
+name: PyVMCON documentation deployment workflow
+
+on:
+  push:
+    branches: [$default-branch]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - uses: actions/checkout@v3
+      - name: Install PyVMCON with docs dependencies
+        run: pip install '.[docs]'
+      - name: Build Sphinx documentation
+        run: |
+          cd docs/
+          make html
+          cd ..
+      - name: Setup pages
+        uses: actions/configure-pages@v3
+      - name: Upload static HTML
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: "docs/build/html/"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
