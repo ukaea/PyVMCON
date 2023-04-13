@@ -8,11 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        py_version: ["3.8", "3.10", "3.11"]
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.8", "3.10", "3.11"]
     steps:
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.py_version }}
+          python-version: ${{ matrix.python-version }}
       - uses: actions/checkout@v3
       - name: Install pytest
         run: pip install pytest

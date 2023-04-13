@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  test_pyvmcon:
+  quality_assure_pyvmcon:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v2
