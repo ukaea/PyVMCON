@@ -167,3 +167,21 @@ We can then perform the BFGS update:
 
 .. math::
     \mathbf{B_{NEW}} = \mathbf{B} - \frac{B\vec{\xi}\vec{\xi}^TB}{\vec{\xi}^TB\vec{\xi}} + \frac{ \vec{\eta} \vec{\eta}^T}{\vec{\xi}^T\vec{\eta}}
+
+
+The VMCON Algorithm
+-------------------
+This page covers to mathematics and theory behind the VMCON algorithm. For completeness, the following flow diagram demonstrates
+how the algorithm is implemented at a high level.
+
+.. mermaid::
+
+    flowchart
+        setup("Initialisation of VMCON") --> j1("j = 1")
+        j1 --> qsp("The Quadratic Programming Problem (Lagrange multipliers and search direction)")
+        qsp --> convergence_test(["Convergence criterion met?"])
+        convergence_test -- "Yes" --> exit[["Exit"]]
+        convergence_test -- "No" --> linesearch("Line search (next evaluation point)")
+        linesearch --> bfgs("BFGS update")
+        bfgs --> incrementj("j = j + 1")
+        incrementj --> qsp
