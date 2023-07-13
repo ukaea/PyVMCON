@@ -7,9 +7,7 @@ specifically, minimising an objective function subject to several nonlinear cons
 
 The Problem
 -----------
-Also called the *general non-linear programming problem*, we want to minimise an objective function (figure of merit) :math:`f(\vec{x})`
-
-subject to some non-linear constraints:
+Also called the *general non-linear programming problem*, we want to minimise an objective function (figure of merit), :math:`f(\vec{x})`, subject to some non-linear constraints:
 
 .. math::
     c_i(\vec{x}) = 0, \quad i = 1,...,k
@@ -62,8 +60,8 @@ The Quadratic Programming Problem
 The Quadratic Programming Probelm (QPP) will also be known as the Quadratic Sub-Problem (QSP) because it forms only a part of the
 VMCON algorithm--with the other half being the Augmented Lagrangian.
 
-The QPP provides the search direction :math:`\delta_j` which is a vector within which :math:`\vec{x}_j` will lay.
-Solving the QPP also provides the Lagrange multipliers, :math:`\lambda_{j,i}`.
+The QPP provides the search direction :math:`\delta_j` which is a vector upon which :math:`\vec{x}_j` will lay.
+Solving the QPP also provides the Lagrange multipliers, :math:`\lambda_{j}`.
 
 The quadratic program to be minimised on iteration :math:`j` is:
 
@@ -171,7 +169,7 @@ We can then perform the BFGS update:
 
 The VMCON Algorithm
 -------------------
-This page covers to mathematics and theory behind the VMCON algorithm. For completeness, the following flow diagram demonstrates
+This page covers the mathematics and theory behind the VMCON algorithm. For completeness, the following flow diagram demonstrates
 how the algorithm is implemented at a high level.
 
 .. mermaid::
