@@ -125,7 +125,7 @@ or the so-called Kovari condition, which was an ad-hoc break condition in the PR
 
 Once the line search exits, we have found our optimal value and :math:`\alpha_j = \alpha`.
 
-Finally, on each iteration of the line search, we revise :math:`\alpha` using a quadratic approximation:
+On each iteration of the line search, we revise :math:`\alpha` using a quadratic approximation:
 
 .. math::
     \alpha = min\left(0.1\alpha, \frac{-\alpha^2}{\phi(\alpha) - \phi(0) - \alpha(\phi(1) - \phi(0))}\right)
@@ -164,7 +164,7 @@ The definition of :math:`\vec{\eta}` ensures :math:`\mathbf{B}` remains positive
 We can then perform the BFGS update:
 
 .. math::
-    \mathbf{B_{NEW}} = \mathbf{B} - \frac{B\vec{\xi}\vec{\xi}^TB}{\vec{\xi}^TB\vec{\xi}} + \frac{ \vec{\eta} \vec{\eta}^T}{\vec{\xi}^T\vec{\eta}}
+    \mathbf{B_{NEW}} = \mathbf{B} - \frac{\mathbf{B}\vec{\xi}\vec{\xi}^T\mathbf{B}}{\vec{\xi}^T\mathbf{B}\vec{\xi}} + \frac{ \vec{\eta} \vec{\eta}^T}{\vec{\xi}^T\vec{\eta}}
 
 
 The VMCON Algorithm

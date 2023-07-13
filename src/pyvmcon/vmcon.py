@@ -108,7 +108,6 @@ def solve(
     lamda_inequality = None
 
     for i in range(max_iter):
-        print(f"Iteration {i}")
         result = problem(x)
 
         # solve the quadratic subproblem to identify
