@@ -24,6 +24,10 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install PyVMCON with docs dependencies
         run: pip install '.[docs]'
+      - name: Install pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
       - name: Build Sphinx documentation
         run: |
           cd docs/

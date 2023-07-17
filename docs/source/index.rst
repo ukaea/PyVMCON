@@ -8,6 +8,7 @@ Python implementation of the [VMCON]_ non-linear constrained optimisation algori
    :caption: Contents:
 
    vmcon
+   example
    modules
 
 References
