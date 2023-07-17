@@ -16,7 +16,10 @@ dependencies = [
 docs = [
     "Sphinx>=6.1",
     "sphinxcontrib-mermaid>=0.9",
-    "nbsphinx>=0.9"
+    "nbsphinx>=0.9",
+    "ipython",
+    "ipykernel",
+    "nbformat>=4.2",
 ]
 
 [tool.setuptools.packages.find]
