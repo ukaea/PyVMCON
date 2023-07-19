@@ -1,7 +1,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "PyVMCON"
-copyright = "2023, Timothy Nunn"
+copyright = "2023, UK Atomic Energy Authority"
 author = "Timothy Nunn"
 
 # The full version, including alpha/beta/rc tags
