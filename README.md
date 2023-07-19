@@ -25,7 +25,7 @@ Tests can be run using `pytest tests/`. The tests check the paper examples are r
 ## Documentation
 Documentation for the VMCON algorithm and PyVMCON API/use can be found on our [**GitHub pages**](https://timothy-nunn.github.io/PyVMCON/). The documentation includes references to the VMCON paper and other helpful resources.
 
-## License
+## License
 PyVMCON is provided under the MIT license, please see the LICENSE file for full details.
 
 Copyright (c) 2023 UK Atomic Energy Authority
