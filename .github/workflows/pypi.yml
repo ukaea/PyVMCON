@@ -1,0 +1,24 @@
+name: Publish PyVMCON to The Python Package Index (PyPI)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-publish:
+    name: Build and publish Python distributions PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.x"
+    - name: Install pypa/build
+      run: python3 -m pip install build
+    - name: Build a binary wheel and a source tarball
+      run: python3 -m build --sdist --wheel --outdir dist/ .
+    - name: Publish PyVMCON to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1

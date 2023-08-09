@@ -2,13 +2,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Testing Workflow](https://github.com/ukaea/PyVMCON/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/ukaea/PyVMCON/actions/workflows/tests.yml)
 
-A Python implementation of the VMCON nonlinear constrained optimiser in Python.
+A Python implementation of the VMCON nonlinear constrained optimiser.
 
 ## Installation
-Currently, PyVMCON is not released on PyPi. It can be installed via:
+PyVMCON can be installed from PyPI via:
 
 ```
-pip install git+https://github.com/ukaea/PyVMCON.git
+pip install PyVMCON
 ```
 
 Or installed from source:
