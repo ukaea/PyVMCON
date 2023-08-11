@@ -4,10 +4,22 @@ requires = ["setuptools", "wheel"]
 [project]
 name = "PyVMCON"
 version = "1.0.0"
-description = "python implementation of the VMCON non-linear constrained optimiser."
+description = "Python implementation of the VMCON non-linear constrained optimiser."
+keywords = ["vmcon", "optimisation", "non-linear constrained optimisation"]
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [{ name = "Timothy Nunn", email = "timothy.nunn@ukaea.uk" }]
+requires-python = ">=3.6"
 dependencies = ["numpy>=1.19", "scipy>=1.6", "cvxpy>=1.3"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.urls]
+Documentation = "https://ukaea.github.io/PyVMCON/"
+Source = "https://github.com/ukaea/PyVMCON"
 
 [project.optional-dependencies]
 docs = [
