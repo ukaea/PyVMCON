@@ -15,7 +15,7 @@ class VMCONConvergenceException(Exception):
         x: Optional[np.ndarray] = None,
         result: Optional[Result] = None,
         lamda_equality: Optional[np.ndarray] = None,
-        lamda_inequality: Optional[np.ndarray] = None
+        lamda_inequality: Optional[np.ndarray] = None,
     ) -> None:
         """Constructor for the exception raised when VMCON cannot converge
         on a feasible solution.
