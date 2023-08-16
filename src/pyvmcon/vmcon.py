@@ -24,7 +24,7 @@ def solve(
     epsilon: float = 1e-8,
     qsp_options: Optional[Dict[str, Any]] = None,
     initial_B: Optional[np.ndarray] = None,
-    callback: Optional[Callable[[int, np.ndarray, Result], None]],
+    callback: Optional[Callable[[int, np.ndarray, Result], None]] = None,
 ):
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
