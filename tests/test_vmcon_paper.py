@@ -38,6 +38,26 @@ class VMCONTestAsset(NamedTuple):
             expected_lamda_inequality=[1.846591],
         ),
         # Test 1 detailed in ANL-80-64 page 25
+        # with one of the constraints duplicated
+        # This is to check we can deal with more constraints
+        # than inputs
+        VMCONTestAsset(
+            Problem(
+                lambda x: (x[0] - 2) ** 2 + (x[1] - 1) ** 2,
+                lambda x: np.array([2 * (x[0] - 2), 2 * (x[1] - 1)]),
+                [lambda x: x[0] - (2 * x[1]) + 1, lambda x: x[0] - (2 * x[1]) + 1],
+                [lambda x: -((x[0] ** 2) / 4) - (x[1] ** 2) + 1],
+                [lambda _: np.array([1, -2]), lambda _: np.array([1, -2])],
+                [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
+            ),
+            initial_x=np.array([2.0, 2.0]),
+            expected_x=[8.228756e-1, 9.114378e-1],
+            # duplicating the constraint is probably expected
+            # to change the Lagrange multipliers
+            expected_lamda_equality=[-0.7972455591261, -0.7972455591261],
+            expected_lamda_inequality=[1.846591],
+        ),
+        # Test 1 detailed in ANL-80-64 page 25
         # with added, unintrusive, bounds
         VMCONTestAsset(
             Problem(

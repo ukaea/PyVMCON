@@ -55,7 +55,7 @@ def solve(
 
     initial_B : ndarray
         Initial estimate of the Hessian matrix `B`. If `None`, `B` is the
-        identity matrix of shape `(max(n,m), max(n,m))`.
+        identity matrix of shape `(n, n)`.
 
     callback : Optional[Callable[[int, np.ndarray, Result], None]]
         A callable which takes the current iteration, current design point,
@@ -100,13 +100,10 @@ def solve(
     # and the constraints take
     n = x.shape[0]
 
-    # m is the total number of constraints
-    m = problem.total_constraints
-
     # The paper uses the B matrix as the
     # running approximation of the Hessian
     if initial_B is None:
-        B = np.identity(max(n, m))
+        B = np.identity(n)
     else:
         B = initial_B
 
