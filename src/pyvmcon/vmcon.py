@@ -102,10 +102,7 @@ def solve(
 
     # The paper uses the B matrix as the
     # running approximation of the Hessian
-    if initial_B is None:
-        B = np.identity(n)
-    else:
-        B = initial_B
+    B = np.identity(n) if initial_B is None else initial_B
 
     callback = callback or (lambda _i, _result, _x, _con: None)
 
