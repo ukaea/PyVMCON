@@ -1,7 +1,7 @@
-import pytest
 from typing import NamedTuple
-import numpy as np
 
+import numpy as np
+import pytest
 from pyvmcon import solve
 from pyvmcon.exceptions import VMCONConvergenceException
 from pyvmcon.problem import Problem

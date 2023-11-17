@@ -1,13 +1,14 @@
-from typing import List, Tuple, Union, Optional, Dict, Any, Callable
 import logging
-import numpy as np
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import cvxpy as cp
+import numpy as np
 
 from .exceptions import (
-    VMCONConvergenceException,
     LineSearchConvergenceException,
-    _QspSolveException,
     QSPSolverException,
+    VMCONConvergenceException,
+    _QspSolveException,
 )
 from .problem import AbstractProblem, Result, T
 
@@ -77,7 +78,6 @@ def solve(
     result : Result
         The result from running the solution vector through the problem.
     """
-
     if len(x.shape) != 1:
         raise ValueError("Input vector `x` is not a 1D array")
 
