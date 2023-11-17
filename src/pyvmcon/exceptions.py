@@ -8,7 +8,7 @@ from .problem import Result
 class VMCONConvergenceException(Exception):
     """Base class for an exception that indicates VMCON has
     failed to converge. This exception allows certain diagnostics
-    to be passed and propogated with the exception.
+    to be passed and propagated with the exception.
     """
 
     def __init__(

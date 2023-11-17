@@ -160,7 +160,7 @@ def solve(
 
         # use alpha found during the linesearch to find xj.
         # Notice that the revision of matrix B needs the x^(j-1)
-        # so our running x is not overriden yet!
+        # so our running x is not overridden yet!
         xj = x + alpha * delta
 
         # Revise matrix B
@@ -226,7 +226,7 @@ def solve_qsp(
 
     options : Dict[str, Any]
         Dictionary of keyword arguments that are passed to the
-        CVXPY `Probelem.solve` method.
+        CVXPY `Problem.solve` method.
 
     Notes
     -----
@@ -381,7 +381,7 @@ def perform_linesearch(
 
     else:
         raise LineSearchConvergenceException(
-            "Line search did not converge on an approimate minima",
+            "Line search did not converge on an approximate minima",
             x=x_jm1,
             result=result,
             lamda_equality=lamda_equality,
