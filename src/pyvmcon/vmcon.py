@@ -450,9 +450,8 @@ def calculate_new_B(
         ksi[:] = 1e-10
 
     # eqn 8
-    B += (gamma @ gamma.T) / (ksi.T @ gamma) - (
-        (B @ ksi @ ksi.T @ B) / (ksi.T @ B @ ksi)
-    )
+    B_ksi = B @ ksi
+    B += (gamma @ gamma.T) / (ksi.T @ gamma) - ((B_ksi @ ksi.T @ B) / (ksi.T @ B_ksi))
 
     return B
 
