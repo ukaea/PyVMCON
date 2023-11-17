@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict, Any, Callable
+from typing import List, Tuple, Union, Optional, Dict, Any, Callable
 import logging
 import numpy as np
 import cvxpy as cp
@@ -9,7 +9,7 @@ from .exceptions import (
     _QspSolveException,
     QSPSolverException,
 )
-from .problem import AbstractProblem, Result
+from .problem import AbstractProblem, Result, T
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def solve(
     qsp_options: Optional[Dict[str, Any]] = None,
     initial_B: Optional[np.ndarray] = None,
     callback: Optional[Callable[[int, np.ndarray, Result], None]] = None,
-):
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
     Parameters
@@ -200,7 +200,7 @@ def solve_qsp(
     lbs: Optional[np.ndarray],
     ubs: Optional[np.ndarray],
     options: Dict[str, Any],
-):
+) -> Tuple[np.ndarray, ...]:
     """Solves the quadratic programming problem detailed in equation 4 and 5
     of the VMCON paper.
 
@@ -318,7 +318,7 @@ def convergence_value(
     return abs_df_dot_delta + abs_equality_err + abs_inequality_err
 
 
-def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray):
+def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray) -> np.ndarray:
     if mu_im1 is None:
         return np.abs(lamda)
 
@@ -335,7 +335,7 @@ def perform_linesearch(
     lamda_inequality: np.ndarray,
     delta: np.ndarray,
     x_jm1: np.ndarray,
-):
+) -> Tuple[float, np.ndarray, np.ndarray, Result]:
     """Performs the line search on equation 6 (to minimise phi).
 
     Parameters
@@ -355,7 +355,7 @@ def perform_linesearch(
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
 
-    def phi(result: Result):
+    def phi(result: Result) -> T:
         sum_equality = (mu_equality * np.abs(result.eq)).sum()
         sum_inequality = (
             mu_inequality * np.abs(np.array([min(0, c) for c in result.ie]))
@@ -413,7 +413,7 @@ def _derivative_lagrangian(
     return result.df - c_equality_prime - c_inequality_prime
 
 
-def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray):
+def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray) -> np.ndarray:
     ksiTBksi = ksi.T @ B @ ksi  # used throughout eqn 10
     ksiTgamma = ksi.T @ gamma  # dito, to reduce amount of matmul
 
@@ -432,7 +432,7 @@ def calculate_new_B(
     x_j: np.ndarray,
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
-):
+) -> np.ndarray:
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
@@ -469,7 +469,7 @@ def calculate_new_B(
     return B
 
 
-def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray):
+def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray) -> List[str]:
     """Return the indices of the out of bounds variables"""
 
     out_of_bounds = []
