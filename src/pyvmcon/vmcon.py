@@ -398,8 +398,12 @@ def _derivative_lagrangian(
 ) -> np.ndarray:
     ind_eq = min(lamda_equality.shape[0], result.deq.shape[0])
     ind_ieq = min(lamda_inequality.shape[0], result.die.shape[0])
-    c_equality_prime = (lamda_equality[:ind_eq] * result.deq[:ind_eq]).sum(axis=0)
-    c_inequality_prime = (lamda_inequality[:ind_ieq] * result.die[:ind_ieq]).sum(axis=0)
+    c_equality_prime = (lamda_equality[:ind_eq, None] * result.deq[:ind_eq]).sum(
+        axis=None if ind_eq == 0 else 0
+    )
+    c_inequality_prime = (lamda_inequality[:ind_ieq, None] * result.die[:ind_ieq]).sum(
+        axis=None if ind_ieq == 0 else 0
+    )
 
     return result.df - c_equality_prime - c_inequality_prime
 
