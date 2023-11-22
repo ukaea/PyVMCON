@@ -1,15 +1,16 @@
-from typing import Union, Optional, Dict, Any, Callable
 import logging
-import numpy as np
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import cvxpy as cp
+import numpy as np
 
 from .exceptions import (
-    VMCONConvergenceException,
     LineSearchConvergenceException,
-    _QspSolveException,
     QSPSolverException,
+    VMCONConvergenceException,
+    _QspSolveException,
 )
-from .problem import AbstractProblem, Result
+from .problem import AbstractProblem, Result, T
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def solve(
     qsp_options: Optional[Dict[str, Any]] = None,
     initial_B: Optional[np.ndarray] = None,
     callback: Optional[Callable[[int, np.ndarray, Result], None]] = None,
-):
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
     Parameters
@@ -77,7 +78,6 @@ def solve(
     result : Result
         The result from running the solution vector through the problem.
     """
-
     if len(x.shape) != 1:
         raise ValueError("Input vector `x` is not a 1D array")
 
@@ -102,10 +102,7 @@ def solve(
 
     # The paper uses the B matrix as the
     # running approximation of the Hessian
-    if initial_B is None:
-        B = np.identity(n)
-    else:
-        B = initial_B
+    B = np.identity(n) if initial_B is None else initial_B
 
     callback = callback or (lambda _i, _result, _x, _con: None)
 
@@ -163,7 +160,7 @@ def solve(
 
         # use alpha found during the linesearch to find xj.
         # Notice that the revision of matrix B needs the x^(j-1)
-        # so our running x is not overriden yet!
+        # so our running x is not overridden yet!
         xj = x + alpha * delta
 
         # Revise matrix B
@@ -200,7 +197,7 @@ def solve_qsp(
     lbs: Optional[np.ndarray],
     ubs: Optional[np.ndarray],
     options: Dict[str, Any],
-):
+) -> Tuple[np.ndarray, ...]:
     """Solves the quadratic programming problem detailed in equation 4 and 5
     of the VMCON paper.
 
@@ -229,7 +226,7 @@ def solve_qsp(
 
     options : Dict[str, Any]
         Dictionary of keyword arguments that are passed to the
-        CVXPY `Probelem.solve` method.
+        CVXPY `Problem.solve` method.
 
     Notes
     -----
@@ -307,18 +304,16 @@ def convergence_value(
         The Lagrange multipliers for inequality constraints for the jth
         evaluation point.
     """
+    ind_eq = min(lamda_equality.shape[0], result.eq.shape[0])
+    ind_ieq = min(lamda_inequality.shape[0], result.ie.shape[0])
     abs_df_dot_delta = abs(np.dot(result.df, delta_j))
-    abs_equality_err = np.sum(
-        [abs(lamda * c) for lamda, c in zip(lamda_equality, result.eq)]
-    )
-    abs_inequality_err = np.sum(
-        [abs(lamda * c) for lamda, c in zip(lamda_inequality, result.ie)]
-    )
+    abs_equality_err = abs(np.sum(lamda_equality[:ind_eq] * result.eq[:ind_eq]))
+    abs_inequality_err = abs(np.sum(lamda_inequality[:ind_ieq] * result.ie[:ind_ieq]))
 
     return abs_df_dot_delta + abs_equality_err + abs_inequality_err
 
 
-def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray):
+def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray) -> np.ndarray:
     if mu_im1 is None:
         return np.abs(lamda)
 
@@ -335,7 +330,7 @@ def perform_linesearch(
     lamda_inequality: np.ndarray,
     delta: np.ndarray,
     x_jm1: np.ndarray,
-):
+) -> Tuple[float, np.ndarray, np.ndarray, Result]:
     """Performs the line search on equation 6 (to minimise phi).
 
     Parameters
@@ -355,11 +350,9 @@ def perform_linesearch(
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
 
-    def phi(result: Result):
+    def phi(result: Result) -> T:
         sum_equality = (mu_equality * np.abs(result.eq)).sum()
-        sum_inequality = (
-            mu_inequality * np.abs(np.array([min(0, c) for c in result.ie]))
-        ).sum()
+        sum_inequality = (mu_inequality * np.abs(np.minimum(0, result.ie))).sum()
 
         return result.f + sum_equality + sum_inequality
 
@@ -388,7 +381,7 @@ def perform_linesearch(
 
     else:
         raise LineSearchConvergenceException(
-            "Line search did not converge on an approimate minima",
+            "Line search did not converge on an approximate minima",
             x=x_jm1,
             result=result,
             lamda_equality=lamda_equality,
@@ -402,18 +395,20 @@ def _derivative_lagrangian(
     result: Result,
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
-):
-    c_equality_prime = sum(
-        [lamda * dc for lamda, dc in zip(lamda_equality, result.deq)]
+) -> np.ndarray:
+    ind_eq = min(lamda_equality.shape[0], result.deq.shape[0])
+    ind_ieq = min(lamda_inequality.shape[0], result.die.shape[0])
+    c_equality_prime = (lamda_equality[:ind_eq, None] * result.deq[:ind_eq]).sum(
+        axis=None if ind_eq == 0 else 0
     )
-    c_inequality_prime = sum(
-        [lamda * dc for lamda, dc in zip(lamda_inequality, result.die)]
+    c_inequality_prime = (lamda_inequality[:ind_ieq, None] * result.die[:ind_ieq]).sum(
+        axis=None if ind_ieq == 0 else 0
     )
 
     return result.df - c_equality_prime - c_inequality_prime
 
 
-def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray):
+def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray) -> np.ndarray:
     ksiTBksi = ksi.T @ B @ ksi  # used throughout eqn 10
     ksiTgamma = ksi.T @ gamma  # dito, to reduce amount of matmul
 
@@ -432,7 +427,7 @@ def calculate_new_B(
     x_j: np.ndarray,
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
-):
+) -> np.ndarray:
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
@@ -448,9 +443,7 @@ def calculate_new_B(
         lamda_equality,
         lamda_inequality,
     )
-    gamma = (g1 - g2).reshape((x_j.shape[0], 1))
-
-    gamma = _powells_gamma(gamma, ksi, B)
+    gamma = _powells_gamma((g1 - g2).reshape((x_j.shape[0], 1)), ksi, B)
 
     if (gamma == 0).all():
         logger.warning("All gamma components are 0")
@@ -460,21 +453,13 @@ def calculate_new_B(
         logger.warning("All xi (ksi) components are 0")
         ksi[:] = 1e-10
 
-    B = (
-        B
-        - ((B @ ksi @ ksi.T @ B) / (ksi.T @ B @ ksi))
-        + ((gamma @ gamma.T) / (ksi.T @ gamma))
-    )  # eqn 8
+    # eqn 8
+    B_ksi = B @ ksi
+    B += (gamma @ gamma.T) / (ksi.T @ gamma) - ((B_ksi @ ksi.T @ B) / (ksi.T @ B_ksi))
 
     return B
 
 
-def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray):
+def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray) -> List[str]:
     """Return the indices of the out of bounds variables"""
-
-    out_of_bounds = []
-    for i, boolean in enumerate((higher - lower) < 0):
-        if boolean:
-            out_of_bounds.append(str(i))
-
-    return out_of_bounds
+    return np.nonzero((higher - lower) < 0)[0].astype(str).tolist()

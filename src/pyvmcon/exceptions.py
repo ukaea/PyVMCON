@@ -1,4 +1,5 @@
 from typing import Optional
+
 import numpy as np
 
 from .problem import Result
@@ -7,7 +8,8 @@ from .problem import Result
 class VMCONConvergenceException(Exception):
     """Base class for an exception that indicates VMCON has
     failed to converge. This exception allows certain diagnostics
-    to be passed and propogated with the exception."""
+    to be passed and propagated with the exception.
+    """
 
     def __init__(
         self,
@@ -51,20 +53,14 @@ class _QspSolveException(Exception):
     to identify that the QSP has failed to solve.
     """
 
-    pass
-
 
 class QSPSolverException(VMCONConvergenceException):
     """Indicates VMCON failed to solve because the QSP Solver was unable
     to solve.
     """
 
-    pass
-
 
 class LineSearchConvergenceException(VMCONConvergenceException):
     """Indicates the line search portion of VMCON was unable to
     solve within a pre-defined number of iterations
     """
-
-    pass

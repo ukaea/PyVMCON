@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, TypeVar, Callable, List
+from typing import Callable, List, NamedTuple, TypeVar
+
 import numpy as np
 
 T = TypeVar("T", np.ndarray, np.number, float)
@@ -45,7 +46,6 @@ class AbstractProblem(ABC):
     @abstractmethod
     def num_equality(self) -> int:
         """Returns the number of equality constraints this problem has"""
-        pass
 
     @property
     def has_equality(self) -> bool:
@@ -59,7 +59,6 @@ class AbstractProblem(ABC):
     @abstractmethod
     def num_inequality(self) -> int:
         """Returns the number of inequality constraints this problem has"""
-        pass
 
     @property
     def total_constraints(self) -> int:
