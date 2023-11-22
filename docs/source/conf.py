@@ -5,7 +5,7 @@ copyright = "2023, UK Atomic Energy Authority"
 author = "Timothy Nunn"
 
 # The full version, including alpha/beta/rc tags
-release = "2.1.1"
+release = "2.1.2"
 
 
 # -- General configuration ---------------------------------------------------
