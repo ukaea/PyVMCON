@@ -35,7 +35,7 @@ class AbstractProblem(ABC):
 
     Note that when defining a problem, VMCON will **minimise** an objective function
     `f(x)` subject to some equality constraints `e(x) = 0` and some inequality
-    constraints `i(x) <= 0`.
+    constraints `i(x) >= 0`.
     """
 
     @abstractmethod
