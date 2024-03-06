@@ -270,20 +270,15 @@ def solve_qsp(
         + (delta.T @ result.df)
     )
 
-    equality_index = 0
-
     constraints = []
     if problem.has_inequality:
-        equality_index += 1
         constraints.append((result.die @ delta) + result.ie >= 0)
-    if lbs is not None:
-        equality_index += 1
-        constraints.append(x + delta >= lbs)
-    if ubs is not None:
-        equality_index += 1
-        constraints.append(x + delta <= ubs)
     if problem.has_equality:
         constraints.append((result.deq @ delta) + result.eq == 0)
+    if lbs is not None:
+        constraints.append(x + delta >= lbs)
+    if ubs is not None:
+        constraints.append(x + delta <= ubs)
 
     qsp = cp.Problem(problem_statement, constraints or None)
     qsp.solve(**{"solver": cp.OSQP, **options})
@@ -296,13 +291,13 @@ def solve_qsp(
 
     if problem.has_inequality and problem.has_equality:
         lamda_inequality = qsp.constraints[0].dual_value
-        lamda_equality = -qsp.constraints[equality_index].dual_value
+        lamda_equality = -qsp.constraints[1].dual_value
 
     elif problem.has_inequality and not problem.has_equality:
         lamda_inequality = qsp.constraints[0].dual_value
 
     elif not problem.has_inequality and problem.has_equality:
-        lamda_equality = -qsp.constraints[equality_index].dual_value
+        lamda_equality = -qsp.constraints[0].dual_value
 
     return delta.value, lamda_equality, lamda_inequality
 
