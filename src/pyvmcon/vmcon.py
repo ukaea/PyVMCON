@@ -272,9 +272,11 @@ def solve_qsp(
 
     constraints = []
     if problem.has_inequality:
-        constraints.append((result.die @ delta) + result.ie >= 0)
+        for i in range(problem.num_inequality):
+            constraints.append((result.die[i, :] @ delta + result.ie[i] >= 0))
     if problem.has_equality:
-        constraints.append((result.deq @ delta) + result.eq == 0)
+        for i in range(problem.num_equality):
+            constraints.append((result.deq[i, :] @ delta + result.eq[i] == 0))
     if lbs is not None:
         constraints.append(x + delta >= lbs)
     if ubs is not None:
@@ -290,14 +292,25 @@ def solve_qsp(
     lamda_inequality = np.array([])
 
     if problem.has_inequality and problem.has_equality:
-        lamda_inequality = qsp.constraints[0].dual_value
-        lamda_equality = -qsp.constraints[1].dual_value
+        lamda_inequality = np.array(
+            [qsp.constraints[i].dual_value for i in range(problem.num_inequality)]
+        )
+        lamda_equality = -np.array(
+            [
+                qsp.constraints[problem.num_inequality + i].dual_value
+                for i in range(problem.num_equality)
+            ]
+        )
 
     elif problem.has_inequality and not problem.has_equality:
-        lamda_inequality = qsp.constraints[0].dual_value
+        lamda_inequality = np.array(
+            [qsp.constraints[i].dual_value for i in range(problem.num_inequality)]
+        )
 
     elif not problem.has_inequality and problem.has_equality:
-        lamda_equality = -qsp.constraints[0].dual_value
+        lamda_equality = -np.array(
+            [qsp.constraints[i].dual_value for i in range(problem.num_equality)]
+        )
 
     return delta.value, lamda_equality, lamda_inequality
 
