@@ -48,12 +48,6 @@ class VMCONConvergenceException(Exception):
         self.lamda_inequality = lamda_inequality
 
 
-class _QspSolveException(Exception):
-    """An exception that should only be used internally
-    to identify that the QSP has failed to solve.
-    """
-
-
 class QSPSolverException(VMCONConvergenceException):
     """Indicates VMCON failed to solve because the QSP Solver was unable
     to solve.
