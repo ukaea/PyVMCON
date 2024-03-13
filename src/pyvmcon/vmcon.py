@@ -23,6 +23,7 @@ def solve(
     *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
+    relaxation_bounds: Optional[Union[np.ndarray, list]] = None,
     qsp_options: Optional[Dict[str, Any]] = None,
     initial_B: Optional[np.ndarray] = None,
     callback: Optional[Callable[[int, Result, np.ndarray, float], None]] = None,
@@ -150,16 +151,35 @@ def solve(
         # for our constraints
         try:
             delta, lamda_equality, lamda_inequality = solve_qsp(
-                problem, result, x, B, lbs, ubs, qsp_options or {}
+                problem,
+                result,
+                x,
+                B,
+                lbs,
+                ubs,
+                qsp_options or {},
+                relaxation_bounds=None,
             )
-        except _QspSolveException as e:
-            raise QSPSolverException(
-                "QSP failed to solve, indicating no feasible solution could be found.",
-                x=x,
-                result=result,
-                lamda_equality=lamda_equality,
-                lamda_inequality=lamda_inequality,
-            ) from e
+        except _QspSolveException:
+            try:
+                delta, lamda_equality, lamda_inequality = solve_qsp(
+                    problem,
+                    result,
+                    x,
+                    B,
+                    lbs,
+                    ubs,
+                    qsp_options or {},
+                    relaxation_bounds=relaxation_bounds,
+                )
+            except _QspSolveException as e:
+                raise QSPSolverException(
+                    "QSP failed to solve, no feasible solution could be found.",
+                    x=x,
+                    result=result,
+                    lamda_equality=lamda_equality,
+                    lamda_inequality=lamda_inequality,
+                ) from e
 
         # Exit to optimisation loop if the convergence
         # criteria is met
@@ -226,6 +246,8 @@ def solve_qsp(
     lbs: Optional[np.ndarray],
     ubs: Optional[np.ndarray],
     options: Dict[str, Any],
+    *,
+    relaxation_bounds: Optional[Union[np.ndarray, list]] = None,
 ) -> Tuple[np.ndarray, ...]:
     """Solves the quadratic programming problem detailed in equation 4 and 5
     of the VMCON paper.
@@ -271,18 +293,39 @@ def solve_qsp(
     )
 
     constraints = []
+    ksi_constraints = []
     if problem.has_inequality:
         for i in range(problem.num_inequality):
-            constraints.append((result.die[i, :] @ delta + result.ie[i] >= 0))
+            if result.ie[i] <= 0 and relaxation_bounds is not None:
+                ksii = cp.Variable()
+                constraints.append(
+                    (result.die[i, :] @ delta) + (result.ie[i] * ksii) >= 0
+                )
+                ksi_constraints += [
+                    ksii >= relaxation_bounds[0],
+                    ksii <= relaxation_bounds[1],
+                ]
+            else:
+                constraints.append((result.die[i, :] @ delta) + result.ie[i] >= 0)
     if problem.has_equality:
         for i in range(problem.num_equality):
-            constraints.append((result.deq[i, :] @ delta + result.eq[i] == 0))
+            if relaxation_bounds is not None:
+                ksii = cp.Variable()
+                constraints.append(
+                    (result.deq[i, :] @ delta) + (result.eq[i] * ksii) == 0
+                )
+                ksi_constraints += [
+                    ksii >= relaxation_bounds[0],
+                    ksii <= relaxation_bounds[1],
+                ]
+            else:
+                constraints.append((result.deq[i, :] @ delta) + result.eq[i] == 0)
     if lbs is not None:
         constraints.append(x + delta >= lbs)
     if ubs is not None:
         constraints.append(x + delta <= ubs)
 
-    qsp = cp.Problem(problem_statement, constraints or None)
+    qsp = cp.Problem(problem_statement, (constraints + ksi_constraints) or None)
     qsp.solve(**{"solver": cp.OSQP, **options})
 
     if delta.value is None:
