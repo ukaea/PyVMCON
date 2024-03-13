@@ -8,7 +8,6 @@ from .exceptions import (
     LineSearchConvergenceException,
     QSPSolverException,
     VMCONConvergenceException,
-    _QspSolveException,
 )
 from .problem import AbstractProblem, Result, T
 
@@ -143,13 +142,23 @@ def solve(
     lamda_equality = None
     lamda_inequality = None
 
+    relaxed_bounds = [None]
+    if relaxation_bounds is not None:
+        relaxed_bounds.append(relaxation_bounds)
+
     for i in range(max_iter):
         result = problem(x)
 
         # solve the quadratic subproblem to identify
         # our search direction and the Lagrange multipliers
         # for our constraints
-        try:
+        for rb in relaxed_bounds:
+            if rb is not None:
+                logger.info(
+                    f"QSP initially failed on iteration {i}, "
+                    "running QSP with provided relaxation bounds"
+                )
+
             delta, lamda_equality, lamda_inequality = solve_qsp(
                 problem,
                 result,
@@ -158,28 +167,19 @@ def solve(
                 lbs,
                 ubs,
                 qsp_options or {},
-                relaxation_bounds=None,
+                relaxation_bounds=rb,
             )
-        except _QspSolveException:
-            try:
-                delta, lamda_equality, lamda_inequality = solve_qsp(
-                    problem,
-                    result,
-                    x,
-                    B,
-                    lbs,
-                    ubs,
-                    qsp_options or {},
-                    relaxation_bounds=relaxation_bounds,
-                )
-            except _QspSolveException as e:
-                raise QSPSolverException(
-                    "QSP failed to solve, no feasible solution could be found.",
-                    x=x,
-                    result=result,
-                    lamda_equality=lamda_equality,
-                    lamda_inequality=lamda_inequality,
-                ) from e
+
+            if delta is not None:
+                break
+        else:
+            raise QSPSolverException(
+                "QSP failed to solve, no feasible solution could be found.",
+                x=x,
+                result=result,
+                lamda_equality=lamda_equality,
+                lamda_inequality=lamda_inequality,
+            )
 
         # Exit to optimisation loop if the convergence
         # criteria is met
@@ -248,7 +248,7 @@ def solve_qsp(
     options: Dict[str, Any],
     *,
     relaxation_bounds: Optional[Union[np.ndarray, list]] = None,
-) -> Tuple[np.ndarray, ...]:
+) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Solves the quadratic programming problem detailed in equation 4 and 5
     of the VMCON paper.
 
@@ -329,7 +329,8 @@ def solve_qsp(
     qsp.solve(**{"solver": cp.OSQP, **options})
 
     if delta.value is None:
-        raise _QspSolveException(f"QSP failed to solve: {qsp.status}")
+        logger.info(f"QSP failed to solve: {qsp.status}")
+        return None, None, None
 
     lamda_equality = np.array([])
     lamda_inequality = np.array([])
