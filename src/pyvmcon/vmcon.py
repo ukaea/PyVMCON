@@ -25,7 +25,7 @@ def solve(
     epsilon: float = 1e-8,
     qsp_options: Optional[Dict[str, Any]] = None,
     initial_B: Optional[np.ndarray] = None,
-    callback: Optional[Callable[[int, np.ndarray, Result], None]] = None,
+    callback: Optional[Callable[[int, Result, np.ndarray, float], None]] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
@@ -59,8 +59,8 @@ def solve(
         identity matrix of shape `(n, n)`.
 
     callback : Optional[Callable[[int, np.ndarray, Result], None]]
-        A callable which takes the current iteration, current design point,
-        the `Result` of the current design point, and the convergence parameter
+        A callable which takes the current iteration, the `Result` of the
+        current design point, current design point, and the convergence parameter
         as arguments and returns `None`. This callable is called each iteration
         after the QSP is solved but before the convergence test.
 
