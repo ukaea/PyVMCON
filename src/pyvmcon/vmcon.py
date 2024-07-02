@@ -169,9 +169,9 @@ def solve(
 
         callback(i, result, x, convergence_info)
 
-        if additional_convergence and (
-            overwrite_convergence_criteria or convergence_info < epsilon
-        ):
+        if additional_convergence(
+            result, x, delta, lamda_equality, lamda_inequality
+        ) and (overwrite_convergence_criteria or convergence_info < epsilon):
             break
 
         # perform a linesearch along the search direction
