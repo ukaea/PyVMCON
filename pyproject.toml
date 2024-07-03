@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "PyVMCON"
-version = "2.2.1"
+version = "2.2.2"
 description = "Python implementation of the VMCON non-linear constrained optimiser."
 keywords = ["vmcon", "optimisation", "non-linear constrained optimisation"]
 readme = "README.md"
