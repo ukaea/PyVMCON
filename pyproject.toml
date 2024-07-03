@@ -10,7 +10,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Timothy Nunn", email = "timothy.nunn@ukaea.uk" }]
 requires-python = ">=3.8"
-dependencies = ["numpy>=1.19,<2.0", "cvxpy>=1.5.2"]
+dependencies = ["numpy>=1.19", "cvxpy>=1.5.2"]
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
