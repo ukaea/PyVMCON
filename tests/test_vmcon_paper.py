@@ -125,6 +125,7 @@ class VMCONTestAsset(NamedTuple):
                 [lambda x: np.array([2 * x[0], 2 * x[1]])],
                 [],
             ),
+            # Different starting solution yields the the true minimum
             initial_x=np.array([-0.1, -0.1]),
             epsilon=2e-8,
             expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
@@ -204,7 +205,8 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
                 [lambda x: np.array([2 * x[0], 2 * x[1]])],
                 [],
             ),
-            # VMCON will struggle to escape this stationary point
+            # VMCON will struggle to escape this point in the QSP
+            # x = [0, 0] means that the 
             initial_x=np.array([0.0, 0.0]),
             epsilon=2e-8,
             expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
@@ -231,4 +233,5 @@ def test_wikipedia_example_failures(wikipedia_example: VMCONTestAsset):
             wikipedia_example.initial_x,
             max_iter=wikipedia_example.max_iter,
             epsilon=wikipedia_example.epsilon,
+            qsp_options={"max_iter": 10000},
         )
