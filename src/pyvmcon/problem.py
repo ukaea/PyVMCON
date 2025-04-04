@@ -1,5 +1,8 @@
+"""Defines the interface for VMCON to exchange data with external software."""
+
 from abc import ABC, abstractmethod
-from typing import Callable, List, NamedTuple, TypeVar
+from collections.abc import Callable
+from typing import NamedTuple, TypeVar
 
 import numpy as np
 
@@ -7,7 +10,7 @@ T = TypeVar("T", np.ndarray, np.number, float)
 
 
 class Result(NamedTuple):
-    """The data from calling a problem"""
+    """The data from calling a problem."""
 
     f: T
     """Value of the objective function"""
@@ -40,29 +43,31 @@ class AbstractProblem(ABC):
 
     @abstractmethod
     def __call__(self, x: np.ndarray) -> Result:
-        pass
+        """Evaluate the optimisation problem at input x."""
 
     @property
     @abstractmethod
     def num_equality(self) -> int:
-        """Returns the number of equality constraints this problem has"""
+        """The number of equality constraints this problem has."""
 
     @property
     def has_equality(self) -> bool:
+        """Indicates whether or not this problem has equality constraints."""
         return self.num_equality > 0
 
     @property
     def has_inequality(self) -> bool:
+        """Indicates whether or not this problem has inequality constraints."""
         return self.num_inequality > 0
 
     @property
     @abstractmethod
     def num_inequality(self) -> int:
-        """Returns the number of inequality constraints this problem has"""
+        """The number of inequality constraints this problem has."""
 
     @property
     def total_constraints(self) -> int:
-        """Returns the total number of constraints `m`"""
+        """The total number of constraints `m`."""
         return self.num_equality + self.num_inequality
 
 
@@ -71,20 +76,21 @@ _DerivativeFunctionAlias = Callable[[np.ndarray], np.ndarray]
 
 
 class Problem(AbstractProblem):
-    """Provides a simple implementation of an AbstractProblem
-    that essentially acts as a caller to equations to gather all
-    of the various data.
+    """A simple implementation of an AbstractProblem.
+
+    It essentially acts as a caller to equations to gather all of the various data.
     """
 
     def __init__(
         self,
         f: _FunctionAlias,
         df: _DerivativeFunctionAlias,
-        equality_constraints: List[_FunctionAlias],
-        inequality_constraints: List[_FunctionAlias],
-        dequality_constraints: List[_DerivativeFunctionAlias],
-        dinequality_constraints: List[_DerivativeFunctionAlias],
+        equality_constraints: list[_FunctionAlias],
+        inequality_constraints: list[_FunctionAlias],
+        dequality_constraints: list[_DerivativeFunctionAlias],
+        dinequality_constraints: list[_DerivativeFunctionAlias],
     ) -> None:
+        """Construct the problem."""
         super().__init__()
 
         self._f = f
@@ -95,6 +101,7 @@ class Problem(AbstractProblem):
         self._dinequality_constraints = dinequality_constraints
 
     def __call__(self, x: np.ndarray) -> Result:
+        """Evaluate the problem at input point x."""
         return Result(
             self._f(x),
             self._df(x),
@@ -106,8 +113,10 @@ class Problem(AbstractProblem):
 
     @property
     def num_equality(self) -> int:
+        """The number of equality constraints this problem has."""
         return len(self._equality_constraints)
 
     @property
     def num_inequality(self) -> int:
+        """The number of inequality constraints this problem has."""
         return len(self._inequality_constraints)

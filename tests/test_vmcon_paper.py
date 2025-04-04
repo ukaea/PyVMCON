@@ -1,13 +1,19 @@
-from typing import NamedTuple
+"""Tests the entire VMCON solver with examples from the Crane paper."""
+
+from dataclasses import dataclass
 
 import numpy as np
 import pytest
+
 from pyvmcon import solve
 from pyvmcon.exceptions import VMCONConvergenceException
 from pyvmcon.problem import Problem
 
 
-class VMCONTestAsset(NamedTuple):
+@dataclass
+class VMCONTestAsset:
+    """Dataclass describing a problem input and expected result."""
+
     problem: Problem
     initial_x: np.ndarray
     expected_x: np.ndarray
@@ -115,9 +121,10 @@ class VMCONTestAsset(NamedTuple):
     ],
 )
 def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
-    """Tests example runs of VMCON provided in the VMCON paper
-    produce similar results between their implementation, and this
-    implementation.
+    """Tests an example of VMCON from the Crane paper.
+
+    Overall, we assert that this implementation produces similar results to
+    the Crane implementation.
     """
     x, lamda_equality, lamda_inequality, _ = solve(
         vmcon_example.problem,
@@ -154,8 +161,10 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
     ],
 )
 def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
-    """Tests runs of VMCON where the problem describes a minimisation
-    which is infeasible given the constraints.
+    """Tests runs of VMCON from the Crane paper.
+
+    The problem describes a minimisation which is infeasible given the constraints
+    and tests an appropriate error is raised.
 
     Assertions on the returned `x` (the last tried input vector) and
     corresponding Lagrange multipliers have been removed as the QSP

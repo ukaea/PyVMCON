@@ -1,3 +1,5 @@
+"""Python implementation of the VMCON non-linear constrained optimiser."""
+
 from .exceptions import (
     LineSearchConvergenceException,
     QSPSolverException,
@@ -7,11 +9,11 @@ from .problem import AbstractProblem, Problem, Result
 from .vmcon import solve
 
 __all__ = [
-    "solve",
     "AbstractProblem",
+    "LineSearchConvergenceException",
     "Problem",
+    "QSPSolverException",
     "Result",
     "VMCONConvergenceException",
-    "LineSearchConvergenceException",
-    "QSPSolverException",
+    "solve",
 ]
