@@ -206,7 +206,6 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
                 [],
             ),
             # VMCON will struggle to escape this point in the QSP
-            # x = [0, 0] means that the 
             initial_x=np.array([0.0, 0.0]),
             epsilon=2e-8,
             expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
