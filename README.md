@@ -28,4 +28,4 @@ Documentation for the VMCON algorithm and PyVMCON API/use can be found on our [*
 ## License
 PyVMCON is provided under the MIT license, please see the LICENSE file for full details.
 
-Copyright (c) 2023-2024 UK Atomic Energy Authority
+Copyright (c) 2023-2025 UK Atomic Energy Authority

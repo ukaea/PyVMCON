@@ -1,4 +1,4 @@
-from typing import Optional
+"""Exceptions and errors raised within VMCON."""
 
 import numpy as np
 
@@ -6,21 +6,21 @@ from .problem import Result
 
 
 class VMCONConvergenceException(Exception):
-    """Base class for an exception that indicates VMCON has
-    failed to converge. This exception allows certain diagnostics
-    to be passed and propagated with the exception.
+    """Base error for VMCON errors.
+
+    This exception allows certain diagnostics to be passed and propagated
+    with the exception.
     """
 
     def __init__(
         self,
         *args: object,
-        x: Optional[np.ndarray] = None,
-        result: Optional[Result] = None,
-        lamda_equality: Optional[np.ndarray] = None,
-        lamda_inequality: Optional[np.ndarray] = None,
+        x: np.ndarray | None = None,
+        result: Result | None = None,
+        lamda_equality: np.ndarray | None = None,
+        lamda_inequality: np.ndarray | None = None,
     ) -> None:
-        """Constructor for the exception raised when VMCON cannot converge
-        on a feasible solution.
+        """Constructs an exception raised within VMCON.
 
         Parameters
         ----------
@@ -39,6 +39,7 @@ class VMCONConvergenceException(Exception):
 
         lamda_inequality : Optional[ndarray]
             The jth Lagrange multipliers for the inequality constraints
+
         """
         super().__init__(*args)
 
@@ -49,18 +50,12 @@ class VMCONConvergenceException(Exception):
 
 
 class _QspSolveException(Exception):
-    """An exception that should only be used internally
-    to identify that the QSP has failed to solve.
-    """
+    """Internal exception indicating the QSP failed to solve."""
 
 
 class QSPSolverException(VMCONConvergenceException):
-    """Indicates VMCON failed to solve because the QSP Solver was unable
-    to solve.
-    """
+    """Indicates VMCON failed to solve because the QSP Solver was unable to solve."""
 
 
 class LineSearchConvergenceException(VMCONConvergenceException):
-    """Indicates the line search portion of VMCON was unable to
-    solve within a pre-defined number of iterations
-    """
+    """Indicates the line search was unable to converge."""

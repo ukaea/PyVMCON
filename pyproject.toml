@@ -9,7 +9,7 @@ keywords = ["vmcon", "optimisation", "non-linear constrained optimisation"]
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Timothy Nunn", email = "timothy.nunn@ukaea.uk" }]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = ["numpy>=1.19", "cvxpy>=1.5.2"]
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -34,3 +34,25 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+extend-exclude = ["docs/"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",
+    "D213",
+    "D401",
+    "COM812",
+    "PLR",
+    "N818",
+    "N803",
+    "N806",
+    "N802",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["T201", "S311", "ANN", "D103"]
+"tests/*" = ["INP001", "ANN", "D103", "S101", "SLF001", "PLR0915", "PLR2004"]

@@ -1,5 +1,8 @@
+"""The Python implementation of the VMCON algorithm."""
+
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
+from typing import Any
 
 import cvxpy as cp
 import numpy as np
@@ -18,19 +21,20 @@ logger = logging.getLogger(__name__)
 def solve(
     problem: AbstractProblem,
     x: np.ndarray,
-    lbs: Optional[np.ndarray] = None,
-    ubs: Optional[np.ndarray] = None,
+    lbs: np.ndarray | None = None,
+    ubs: np.ndarray | None = None,
     *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
-    qsp_options: Optional[Dict[str, Any]] = None,
-    initial_B: Optional[np.ndarray] = None,
-    callback: Optional[Callable[[int, Result, np.ndarray, float], None]] = None,
-    additional_convergence: Optional[
-        Callable[[Result, np.ndarray, np.ndarray, np.ndarray, np.ndarray], None]
-    ] = None,
+    qsp_options: dict[str, Any] | None = None,
+    initial_B: np.ndarray | None = None,
+    callback: Callable[[int, Result, np.ndarray, float], None] | None = None,
+    additional_convergence: Callable[
+        [Result, np.ndarray, np.ndarray, np.ndarray, np.ndarray], None
+    ]
+    | None = None,
     overwrite_convergence_criteria: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Result]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
     Parameters
@@ -95,29 +99,44 @@ def solve(
 
     result : Result
         The result from running the solution vector through the problem.
-    """
+
+    """  # noqa: E501
     if len(x.shape) != 1:
-        raise ValueError("Input vector `x` is not a 1D array")
+        error_msg = "Input vector `x` is not a 1D array"
+        raise ValueError(error_msg)
 
     if lbs is not None and (x < lbs).any():
-        msg = "x is initially in an infeasible region because at least one x is lower than a lower bound"  # noqa: E501
+        msg = (
+            "x is initially in an infeasible region because at least one x is lower"
+            "than a lower bound"
+        )
+        error_msg = (
+            f"{msg}. The out of bounds variables are at indices"
+            f"{', '.join(_find_out_of_bounds_vars(x, lbs))} (0-based indexing)"
+        )
         logger.error(
-            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(x, lbs))} (0-based indexing)"  # noqa: E501
+            error_msg,
         )
         raise ValueError(msg)
 
     if ubs is not None and (x > ubs).any():
-        msg = "x is initially in an infeasible region because at least one x is greater than an upper bound"  # noqa: E501
-        logger.error(
-            f"{msg}. The out of bounds variables are at indices {', '.join(_find_out_of_bounds_vars(ubs, x))} (0-based indexing)"  # noqa: E501
+        msg = (
+            "x is initially in an infeasible region because at least one x is greater"
+            "than an upper bound"
         )
+        error_msg = (
+            f"{msg}. The out of bounds variables are at indices"
+            f"{', '.join(_find_out_of_bounds_vars(ubs, x))} (0-based indexing)"
+        )
+        logger.error(error_msg)
         raise ValueError(msg)
 
     if overwrite_convergence_criteria and additional_convergence is None:
-        raise ValueError(
+        error_msg = (
             "Cannot overwrite convergence criteria without "
             "providing an 'additional_convergence' callable."
         )
+        raise ValueError(error_msg)
 
     # n is denoted in the VMCON paper
     # as the number of inputs the function
@@ -150,11 +169,20 @@ def solve(
         # for our constraints
         try:
             delta, lamda_equality, lamda_inequality = solve_qsp(
-                problem, result, x, B, lbs, ubs, qsp_options or {}
+                problem,
+                result,
+                x,
+                B,
+                lbs,
+                ubs,
+                qsp_options or {},
             )
         except _QspSolveException as e:
+            error_msg = (
+                "QSP failed to solve, indicating no feasible solution could be found."
+            )
             raise QSPSolverException(
-                "QSP failed to solve, indicating no feasible solution could be found.",
+                error_msg,
                 x=x,
                 result=result,
                 lamda_equality=lamda_equality,
@@ -164,13 +192,20 @@ def solve(
         # Exit to optimisation loop if the convergence
         # criteria is met
         convergence_info = convergence_value(
-            result, delta, lamda_equality, lamda_inequality
+            result,
+            delta,
+            lamda_equality,
+            lamda_inequality,
         )
 
         callback(i, result, x, convergence_info)
 
         if additional_convergence(
-            result, x, delta, lamda_equality, lamda_inequality
+            result,
+            x,
+            delta,
+            lamda_equality,
+            lamda_inequality,
         ) and (overwrite_convergence_criteria or convergence_info < epsilon):
             break
 
@@ -207,8 +242,11 @@ def solve(
         x = xj
 
     else:
+        error_msg = (
+            f"Could not converge on a feasible solution after {max_iter} iterations."
+        )
         raise VMCONConvergenceException(
-            f"Could not converge on a feasible solution after {max_iter} iterations.",
+            error_msg,
             x=x,
             result=result,
             lamda_equality=lamda_equality,
@@ -223,12 +261,13 @@ def solve_qsp(
     result: Result,
     x: np.ndarray,
     B: np.ndarray,
-    lbs: Optional[np.ndarray],
-    ubs: Optional[np.ndarray],
-    options: Dict[str, Any],
-) -> Tuple[np.ndarray, ...]:
-    """Solves the quadratic programming problem detailed in equation 4 and 5
-    of the VMCON paper.
+    lbs: np.ndarray | None,
+    ubs: np.ndarray | None,
+    options: dict[str, Any],
+) -> tuple[np.ndarray, ...]:
+    """Solves the quadratic programming problem.
+
+    This function solves equations 4 and 5 of the VMCON paper.
 
     The QSP is solved using cvxpy. cvxpy requires the problem be convex, which is
     ensured by equation 9 of the VMCON paper.
@@ -262,12 +301,13 @@ def solve_qsp(
     * By default, OSQP (https://osqp.org/) is the `solver` used in
     the `solve` method however this can be changed by specifying a
     different `solver` in the `options` dictionary.
+
     """
     delta = cp.Variable(x.shape)
     problem_statement = cp.Minimize(
         result.f
         + (0.5 * cp.quad_form(delta, B, assume_PSD=True))
-        + (delta.T @ result.df)
+        + (delta.T @ result.df),
     )
 
     equality_index = 0
@@ -289,7 +329,8 @@ def solve_qsp(
     qsp.solve(**{"solver": cp.OSQP, **options})
 
     if delta.value is None:
-        raise _QspSolveException(f"QSP failed to solve: {qsp.status}")
+        error_msg = f"QSP failed to solve: {qsp.status}"
+        raise _QspSolveException(error_msg)
 
     lamda_equality = np.array([])
     lamda_inequality = np.array([])
@@ -314,6 +355,7 @@ def convergence_value(
     lamda_inequality: np.ndarray,
 ) -> float:
     """Test if the convergence criteria of VMCON have been met.
+
     Equation 11 of the VMCON paper. Note this tests convergence at the
     point (j-1)th evaluation point.
 
@@ -325,13 +367,14 @@ def convergence_value(
     delta_j : ndarray
         The search direction for the jth evaluation point.
 
-    lambda_equality : ndarray
+    lamda_equality : ndarray
         The Lagrange multipliers for equality constraints for the jth
         evaluation point.
 
-    lambda_inequality : ndarray
+    lamda_inequality : ndarray
         The Lagrange multipliers for inequality constraints for the jth
         evaluation point.
+
     """
     ind_eq = min(lamda_equality.shape[0], result.eq.shape[0])
     ind_ieq = min(lamda_inequality.shape[0], result.ie.shape[0])
@@ -342,7 +385,7 @@ def convergence_value(
     return abs_df_dot_delta + abs_equality_err + abs_inequality_err
 
 
-def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray) -> np.ndarray:
+def _calculate_mu_i(mu_im1: np.ndarray | None, lamda: np.ndarray) -> np.ndarray:
     if mu_im1 is None:
         return np.abs(lamda)
 
@@ -353,13 +396,13 @@ def _calculate_mu_i(mu_im1: Union[np.ndarray, None], lamda: np.ndarray) -> np.nd
 def perform_linesearch(
     problem: AbstractProblem,
     result: Result,
-    mu_equality: Optional[np.ndarray],
-    mu_inequality: Optional[np.ndarray],
+    mu_equality: np.ndarray | None,
+    mu_inequality: np.ndarray | None,
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
     delta: np.ndarray,
     x_jm1: np.ndarray,
-) -> Tuple[float, np.ndarray, np.ndarray, Result]:
+) -> tuple[float, np.ndarray, np.ndarray, Result]:
     """Performs the line search on equation 6 (to minimise phi).
 
     Parameters
@@ -375,6 +418,21 @@ def perform_linesearch(
 
     mu_inequality : ndarray
         The mu values for the inequality constraints.
+
+    lamda_equality : ndarray
+        The Lagrange multipliers for equality constraints for the (j-1)th
+        evaluation point.
+
+    lamda_inequality : ndarray
+        The Lagrange multipliers for inequality constraints for the (j-1)th
+        evaluation point.
+
+    delta : ndarray
+        The search direction.
+
+    x_jm1 : ndarray
+        The current input vector.
+
     """
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
@@ -396,8 +454,7 @@ def perform_linesearch(
 
     alpha = 1.0
     for _ in range(10):
-        # exit if we satisfy the Armijo condition
-        # or the Kovari condition
+        # exit if we satisfy the Armijo condition or the Kovari condition
         new_result = problem(x_jm1 + alpha * delta) if alpha != 1.0 else result_at_1
         phi_alpha = phi(new_result)
         if phi_alpha <= phi_0 + 0.1 * alpha * capital_delta or phi_alpha > phi_0:
@@ -409,8 +466,9 @@ def perform_linesearch(
         )
 
     else:
+        error_msg = "Line search did not converge on an approximate minima"
         raise LineSearchConvergenceException(
-            "Line search did not converge on an approximate minima",
+            error_msg,
             x=x_jm1,
             result=result,
             lamda_equality=lamda_equality,
@@ -428,10 +486,10 @@ def _derivative_lagrangian(
     ind_eq = min(lamda_equality.shape[0], result.deq.shape[0])
     ind_ieq = min(lamda_inequality.shape[0], result.die.shape[0])
     c_equality_prime = (lamda_equality[:ind_eq, None] * result.deq[:ind_eq]).sum(
-        axis=None if ind_eq == 0 else 0
+        axis=None if ind_eq == 0 else 0,
     )
     c_inequality_prime = (lamda_inequality[:ind_ieq, None] * result.die[:ind_ieq]).sum(
-        axis=None if ind_ieq == 0 else 0
+        axis=None if ind_ieq == 0 else 0,
     )
 
     return result.df - c_equality_prime - c_inequality_prime
@@ -457,6 +515,10 @@ def calculate_new_B(
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
 ) -> np.ndarray:
+    """Updates the hessian approximation matrix.
+
+    Uses Equation 8 of the Crane report.
+    """
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
@@ -489,6 +551,6 @@ def calculate_new_B(
     return B
 
 
-def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray) -> List[str]:
-    """Return the indices of the out of bounds variables"""
+def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray) -> list[str]:
+    """Return the indices of the out of bounds variables."""
     return np.nonzero((higher - lower) < 0)[0].astype(str).tolist()
