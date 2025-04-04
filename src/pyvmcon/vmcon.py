@@ -279,13 +279,12 @@ def solve_qsp(
     if lbs is not None and ubs is not None:
         equality_index += 1
         constraints.append(lbs <= x + delta <= ubs)
-    else:
-        if lbs is not None:
-            equality_index += 1
-            constraints.append(x + delta >= lbs)
-        if ubs is not None:
-            equality_index += 1
-            constraints.append(x + delta <= ubs)
+    elif lbs is not None:  # and ubs is None
+        equality_index += 1
+        constraints.append(x + delta >= lbs)
+    elif ubs is not None:  # and lbs is None
+        equality_index += 1
+        constraints.append(x + delta <= ubs)
     if problem.has_equality:
         constraints.append((result.deq @ delta) + result.eq == 0)
 
