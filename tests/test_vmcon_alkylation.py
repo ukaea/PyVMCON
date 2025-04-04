@@ -13,8 +13,8 @@ See https://courses.mai.liu.se/GU/TAOP04/process-optimization.pdf
 I have added this because my version of VMCON was not able to solve this
 and I wanted to check if this one could. It doesn't appear to be able to
 either. UPDATE: Ok, so in fact it is OSQP that struggles with this problem.
-Switching the solver provides the correct solution. Not all work, and I have
-not tried them all.
+Switching the solver provides the correct solution. Not all cvxpy solver
+options work, and I have not tried them all.
 
 For info, I provide some quick (optional) tests for the same 
 problem using SLSQP and COBYLA (which in scipy is not able to handle 
