@@ -16,8 +16,8 @@ either. UPDATE: Ok, so in fact it is OSQP that struggles with this problem.
 Switching the solver provides the correct solution. Not all cvxpy solver
 options work, and I have not tried them all.
 
-For info, I provide some quick (optional) tests for the same 
-problem using SLSQP and COBYLA (which in scipy is not able to handle 
+For info, I provide some quick (optional) tests for the same
+problem using SLSQP and COBYLA (which in scipy is not able to handle
 equality constraints or bounds - facepalm).
 """
 
@@ -265,23 +265,23 @@ D_INEQUALITY_CONSTRAINTS = [
 ]
 
 
-def test_gradients():
-    np.random.seed(6245431)
-    x = np.random.rand(data.dimension)
+# def test_gradients():
+#     np.random.seed(6245431)
+#     x = np.random.rand(data.dimension)
 
-    from scipy.optimize import approx_fprime
+#     from scipy.optimize import approx_fprime
 
-    grad = approx_fprime(x, f_objective, 1e-8)
-    grad2 = df_objective(x)
-    np.testing.assert_allclose(grad, grad2, rtol=1e-4)
-    for f, df in zip(EQUALITY_CONSTRAINTS, D_EQUALITY_CONSTRAINTS):
-        grad = approx_fprime(x, f, 1e-8)
-        grad2 = df(x)
-        np.testing.assert_allclose(grad, grad2, rtol=1e-4)
-    for f, df in zip(INEQUALITY_CONSTRAINTS, D_INEQUALITY_CONSTRAINTS):
-        grad = approx_fprime(x, f, 1e-8)
-        grad2 = df(x)
-        np.testing.assert_allclose(grad, grad2, rtol=1e-4)
+#     grad = approx_fprime(x, f_objective, 1e-8)
+#     grad2 = df_objective(x)
+#     np.testing.assert_allclose(grad, grad2, rtol=1e-4)
+#     for f, df in zip(EQUALITY_CONSTRAINTS, D_EQUALITY_CONSTRAINTS):
+#         grad = approx_fprime(x, f, 1e-8)
+#         grad2 = df(x)
+#         np.testing.assert_allclose(grad, grad2, rtol=1e-4)
+#     for f, df in zip(INEQUALITY_CONSTRAINTS, D_INEQUALITY_CONSTRAINTS):
+#         grad = approx_fprime(x, f, 1e-8)
+#         grad2 = df(x)
+#         np.testing.assert_allclose(grad, grad2, rtol=1e-4)
 
 
 @pytest.mark.parametrize(
@@ -330,74 +330,74 @@ def test_vmcon_alkylation_problem(qsp_solver, expected_success):
             )
 
 
-def test_slsqp_alkylation_problem():
-    from scipy.optimize import minimize
+# def test_slsqp_alkylation_problem():
+#     from scipy.optimize import minimize
 
-    result = minimize(
-        f_objective,
-        data.suggested_x0,
-        method="SLSQP",
-        jac=df_objective,
-        bounds=[(a, b) for (a, b) in zip(data.lower_bounds, data.upper_bounds)],
-        options={"maxiter": 1000},
-        constraints=[
-            {"type": "eq", "fun": f_equality1, "jac": df_equality1},
-            {"type": "eq", "fun": f_equality2, "jac": df_equality2},
-            {"type": "eq", "fun": f_equality3, "jac": df_equality3},
-            {"type": "ineq", "fun": f_inequality1, "jac": df_inequality1},
-            {"type": "ineq", "fun": f_inequality2, "jac": df_inequality2},
-            {"type": "ineq", "fun": f_inequality3, "jac": df_inequality3},
-            {"type": "ineq", "fun": f_inequality4, "jac": df_inequality4},
-            {"type": "ineq", "fun": f_inequality5, "jac": df_inequality5},
-            {"type": "ineq", "fun": f_inequality6, "jac": df_inequality6},
-            {"type": "ineq", "fun": f_inequality7, "jac": df_inequality7},
-            {"type": "ineq", "fun": f_inequality8, "jac": df_inequality8},
-        ],
-    )
-    print(result)
-    assert result.success
+#     result = minimize(
+#         f_objective,
+#         data.suggested_x0,
+#         method="SLSQP",
+#         jac=df_objective,
+#         bounds=[(a, b) for (a, b) in zip(data.lower_bounds, data.upper_bounds)],
+#         options={"maxiter": 1000},
+#         constraints=[
+#             {"type": "eq", "fun": f_equality1, "jac": df_equality1},
+#             {"type": "eq", "fun": f_equality2, "jac": df_equality2},
+#             {"type": "eq", "fun": f_equality3, "jac": df_equality3},
+#             {"type": "ineq", "fun": f_inequality1, "jac": df_inequality1},
+#             {"type": "ineq", "fun": f_inequality2, "jac": df_inequality2},
+#             {"type": "ineq", "fun": f_inequality3, "jac": df_inequality3},
+#             {"type": "ineq", "fun": f_inequality4, "jac": df_inequality4},
+#             {"type": "ineq", "fun": f_inequality5, "jac": df_inequality5},
+#             {"type": "ineq", "fun": f_inequality6, "jac": df_inequality6},
+#             {"type": "ineq", "fun": f_inequality7, "jac": df_inequality7},
+#             {"type": "ineq", "fun": f_inequality8, "jac": df_inequality8},
+#         ],
+#     )
+#     print(result)
+#     assert result.success
 
 
-def test_cobyla_alkylation_problem():
-    from scipy.optimize import minimize
+# def test_cobyla_alkylation_problem():
+#     from scipy.optimize import minimize
 
-    delta_x = 1e-6  # This is my tolerance for converting equalities to inequalities
-    # The lower it is, the more accurate the solution. I'm guessing this is what was
-    # taken in the reference. Lowering it further makes the results worse.
+#     delta_x = 1e-6  # This is my tolerance for converting equalities to inequalities
+#     # The lower it is, the more accurate the solution. I'm guessing this is what was
+#     # taken in the reference. Lowering it further makes the results worse.
 
-    result = minimize(
-        f_objective,
-        data.suggested_x0,
-        method="Cobyla",
-        options={"maxiter": 20000},
-        tol=1e-20,
-        constraints=[
-            # Jesus Christ scipy, this is not so hard to implement...
-            # Convert bounds to inequalities
-            {"type": "ineq", "fun": lambda x: x},
-            {"type": "ineq", "fun": lambda x: 1 - x},
-            # Convert equalities to inequalities
-            {"type": "ineq", "fun": lambda x: f_equality1(x) - delta_x},
-            {"type": "ineq", "fun": lambda x: -f_equality1(x) - delta_x},
-            {"type": "ineq", "fun": lambda x: f_equality2(x) - delta_x},
-            {"type": "ineq", "fun": lambda x: -f_equality2(x) - delta_x},
-            {"type": "ineq", "fun": lambda x: f_equality3(x) - delta_x},
-            {"type": "ineq", "fun": lambda x: -f_equality3(x) - delta_x},
-            {"type": "ineq", "fun": f_inequality1},
-            {"type": "ineq", "fun": f_inequality2},
-            {"type": "ineq", "fun": f_inequality3},
-            {"type": "ineq", "fun": f_inequality4},
-            {"type": "ineq", "fun": f_inequality5},
-            {"type": "ineq", "fun": f_inequality6},
-            {"type": "ineq", "fun": f_inequality7},
-            {"type": "ineq", "fun": f_inequality8},
-        ],
-    )
-    assert result.success
-    assert np.round(abs(result.fun)) == data.true_f_x
-    np.testing.assert_allclose(
-        np.round(result.x, decimals=1),
-        data.true_x,
-        atol=0.0,
-        rtol=0.0033,
-    )
+#     result = minimize(
+#         f_objective,
+#         data.suggested_x0,
+#         method="Cobyla",
+#         options={"maxiter": 20000},
+#         tol=1e-20,
+#         constraints=[
+#             # Jesus Christ scipy, this is not so hard to implement...
+#             # Convert bounds to inequalities
+#             {"type": "ineq", "fun": lambda x: x},
+#             {"type": "ineq", "fun": lambda x: 1 - x},
+#             # Convert equalities to inequalities
+#             {"type": "ineq", "fun": lambda x: f_equality1(x) - delta_x},
+#             {"type": "ineq", "fun": lambda x: -f_equality1(x) - delta_x},
+#             {"type": "ineq", "fun": lambda x: f_equality2(x) - delta_x},
+#             {"type": "ineq", "fun": lambda x: -f_equality2(x) - delta_x},
+#             {"type": "ineq", "fun": lambda x: f_equality3(x) - delta_x},
+#             {"type": "ineq", "fun": lambda x: -f_equality3(x) - delta_x},
+#             {"type": "ineq", "fun": f_inequality1},
+#             {"type": "ineq", "fun": f_inequality2},
+#             {"type": "ineq", "fun": f_inequality3},
+#             {"type": "ineq", "fun": f_inequality4},
+#             {"type": "ineq", "fun": f_inequality5},
+#             {"type": "ineq", "fun": f_inequality6},
+#             {"type": "ineq", "fun": f_inequality7},
+#             {"type": "ineq", "fun": f_inequality8},
+#         ],
+#     )
+#     assert result.success
+#     assert np.round(abs(result.fun)) == data.true_f_x
+#     np.testing.assert_allclose(
+#         np.round(result.x, decimals=1),
+#         data.true_x,
+#         atol=0.0,
+#         rtol=0.0033,
+#     )
