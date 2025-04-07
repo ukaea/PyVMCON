@@ -193,6 +193,7 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
             epsilon=vmcon_example.epsilon,
         )
 
+
 @pytest.mark.parametrize(
     "wikipedia_example",
     [
@@ -212,7 +213,7 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
             expected_lamda_equality=[-0.5 * 2 ** (0.5)],
             expected_lamda_inequality=[],
         ),
-    ]
+    ],
 )
 def test_wikipedia_example_failures(wikipedia_example: VMCONTestAsset):
     """Tests runs of VMCON where the problem describes a minimisation
