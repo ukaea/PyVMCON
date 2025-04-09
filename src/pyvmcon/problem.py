@@ -6,27 +6,32 @@ from typing import NamedTuple, TypeVar
 
 import numpy as np
 
-T = TypeVar("T", np.ndarray, np.number, float)
+ScalarType = TypeVar("ScalarType", np.ndarray, np.number, float)
+"""A scalar variable e.g. a single number (which could be a 0D numpy array)"""
+VectorType = TypeVar("VectorType", bound=np.ndarray)
+"""A numpy array with only 1 dimension"""
+MatrixType = TypeVar("MatrixType", bound=np.ndarray)
+"""A numpy array with 2 dimensions"""
 
 
 class Result(NamedTuple):
     """The data from calling a problem."""
 
-    f: T
-    """Value of the objective function"""
-    df: T
-    """Derivative of the objective function"""
-    eq: np.ndarray
-    """1D array of the values of the equality constraints with shape"""
-    deq: np.ndarray
+    f: ScalarType
+    """Value of the objective function."""
+    df: VectorType
+    """Derivative of the objective function wrt to each input variable."""
+    eq: VectorType
+    """1D array of the values of the equality constraints with shape."""
+    deq: MatrixType
     """2D array of the derivatives of the equality constraints wrt
-    each component of `x`
+    each input variable.
     """
-    ie: np.ndarray
-    """1D array of the values of the inequality constraints"""
-    die: np.ndarray
+    ie: VectorType
+    """1D array of the values of the inequality constraints."""
+    die: MatrixType
     """2D array of the derivatives of the inequality constraints wrt
-    each component of `x`
+    each input variable.
     """
 
 
@@ -42,7 +47,7 @@ class AbstractProblem(ABC):
     """
 
     @abstractmethod
-    def __call__(self, x: np.ndarray) -> Result:
+    def __call__(self, x: VectorType) -> Result:
         """Evaluate the optimisation problem at input x."""
 
     @property
@@ -71,8 +76,9 @@ class AbstractProblem(ABC):
         return self.num_equality + self.num_inequality
 
 
-_FunctionAlias = Callable[[np.ndarray], T]
-_DerivativeFunctionAlias = Callable[[np.ndarray], np.ndarray]
+_ScalarFunctionAlias = Callable[[VectorType], ScalarType]
+_VectorFunctionAlias = Callable[[VectorType], VectorType]
+_MatrixFunctionAlias = Callable[[VectorType], np.ndarray]
 
 
 class Problem(AbstractProblem):
@@ -83,12 +89,12 @@ class Problem(AbstractProblem):
 
     def __init__(
         self,
-        f: _FunctionAlias,
-        df: _DerivativeFunctionAlias,
-        equality_constraints: list[_FunctionAlias],
-        inequality_constraints: list[_FunctionAlias],
-        dequality_constraints: list[_DerivativeFunctionAlias],
-        dinequality_constraints: list[_DerivativeFunctionAlias],
+        f: _ScalarFunctionAlias,
+        df: _VectorFunctionAlias,
+        equality_constraints: list[_VectorFunctionAlias],
+        inequality_constraints: list[_VectorFunctionAlias],
+        dequality_constraints: list[_MatrixFunctionAlias],
+        dinequality_constraints: list[_MatrixFunctionAlias],
     ) -> None:
         """Construct the problem."""
         super().__init__()
@@ -100,7 +106,7 @@ class Problem(AbstractProblem):
         self._dequality_constraints = dequality_constraints
         self._dinequality_constraints = dinequality_constraints
 
-    def __call__(self, x: np.ndarray) -> Result:
+    def __call__(self, x: VectorType) -> Result:
         """Evaluate the problem at input point x."""
         return Result(
             self._f(x),

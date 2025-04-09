@@ -13,28 +13,28 @@ from .exceptions import (
     VMCONConvergenceException,
     _QspSolveException,
 )
-from .problem import AbstractProblem, Result, T
+from .problem import AbstractProblem, MatrixType, Result, ScalarType, VectorType
 
 logger = logging.getLogger(__name__)
 
 
 def solve(
     problem: AbstractProblem,
-    x: np.ndarray,
-    lbs: np.ndarray | None = None,
-    ubs: np.ndarray | None = None,
+    x: VectorType,
+    lbs: VectorType | None = None,
+    ubs: VectorType | None = None,
     *,
     max_iter: int = 10,
     epsilon: float = 1e-8,
     qsp_options: dict[str, Any] | None = None,
     initial_B: np.ndarray | None = None,
-    callback: Callable[[int, Result, np.ndarray, float], None] | None = None,
+    callback: Callable[[int, Result, VectorType, float], None] | None = None,
     additional_convergence: Callable[
-        [Result, np.ndarray, np.ndarray, np.ndarray, np.ndarray], None
+        [Result, VectorType, VectorType, VectorType, VectorType], None
     ]
     | None = None,
     overwrite_convergence_criteria: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, Result]:
+) -> tuple[VectorType, VectorType, VectorType, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
     Parameters
@@ -259,15 +259,18 @@ def solve(
 def solve_qsp(
     problem: AbstractProblem,
     result: Result,
-    x: np.ndarray,
-    B: np.ndarray,
-    lbs: np.ndarray | None,
-    ubs: np.ndarray | None,
+    x: VectorType,
+    B: MatrixType,
+    lbs: VectorType | None,
+    ubs: VectorType | None,
     options: dict[str, Any],
-) -> tuple[np.ndarray, ...]:
+) -> tuple[VectorType, VectorType, VectorType]:
     """Solves the quadratic programming problem.
 
-    This function solves equations 4 and 5 of the VMCON paper.
+    This function solves equations 4 and 5 of the VMCON paper. It does this by assuming
+    the objective function is quadratic and linearising the constraints. The equations
+    can be found on the
+    [VMCON page of the docs](https://ukaea.github.io/PyVMCON/vmcon.html#the-quadratic-programming-problem).
 
     The QSP is solved using cvxpy. cvxpy requires the problem be convex, which is
     ensured by equation 9 of the VMCON paper.
@@ -348,9 +351,9 @@ def solve_qsp(
 
 def convergence_value(
     result: Result,
-    delta_j: np.ndarray,
-    lamda_equality: np.ndarray,
-    lamda_inequality: np.ndarray,
+    delta_j: VectorType,
+    lamda_equality: VectorType,
+    lamda_inequality: VectorType,
 ) -> float:
     """Test if the convergence criteria of VMCON have been met.
 
@@ -394,13 +397,13 @@ def _calculate_mu_i(mu_im1: np.ndarray | None, lamda: np.ndarray) -> np.ndarray:
 def perform_linesearch(
     problem: AbstractProblem,
     result: Result,
-    mu_equality: np.ndarray | None,
-    mu_inequality: np.ndarray | None,
-    lamda_equality: np.ndarray,
-    lamda_inequality: np.ndarray,
-    delta: np.ndarray,
-    x_jm1: np.ndarray,
-) -> tuple[float, np.ndarray, np.ndarray, Result]:
+    mu_equality: VectorType | None,
+    mu_inequality: VectorType | None,
+    lamda_equality: VectorType,
+    lamda_inequality: VectorType,
+    delta: VectorType,
+    x_jm1: VectorType,
+) -> tuple[ScalarType, VectorType, VectorType, Result]:
     """Performs the line search on equation 6 (to minimise phi).
 
     Parameters
@@ -435,7 +438,7 @@ def perform_linesearch(
     mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
     mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
 
-    def phi(result: Result) -> T:
+    def phi(result: Result) -> ScalarType:
         sum_equality = (mu_equality * np.abs(result.eq)).sum()
         sum_inequality = (mu_inequality * np.abs(np.minimum(0, result.ie))).sum()
 
@@ -478,9 +481,9 @@ def perform_linesearch(
 
 def _derivative_lagrangian(
     result: Result,
-    lamda_equality: np.ndarray,
-    lamda_inequality: np.ndarray,
-) -> np.ndarray:
+    lamda_equality: VectorType,
+    lamda_inequality: VectorType,
+) -> VectorType:
     ind_eq = min(lamda_equality.shape[0], result.deq.shape[0])
     ind_ieq = min(lamda_inequality.shape[0], result.die.shape[0])
     c_equality_prime = (lamda_equality[:ind_eq, None] * result.deq[:ind_eq]).sum(
@@ -493,7 +496,7 @@ def _derivative_lagrangian(
     return result.df - c_equality_prime - c_inequality_prime
 
 
-def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray) -> np.ndarray:
+def _powells_gamma(gamma: VectorType, ksi: VectorType, B: MatrixType) -> np.ndarray:
     ksiTBksi = ksi.T @ B @ ksi  # used throughout eqn 10
     ksiTgamma = ksi.T @ gamma  # dito, to reduce amount of matmul
 
@@ -504,7 +507,7 @@ def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray) -> np.ndar
     return theta * gamma + (1 - theta) * (B @ ksi)  # eqn 9
 
 
-def _revise_B(current_B: np.ndarray, ksi: np.ndarray, gamma: np.ndarray) -> np.ndarray:
+def _revise_B(current_B: MatrixType, ksi: VectorType, gamma: VectorType) -> MatrixType:
     """Revises B using a BFGS update.
 
     Implements Equation 8 of the Crane report.
@@ -519,12 +522,12 @@ def _revise_B(current_B: np.ndarray, ksi: np.ndarray, gamma: np.ndarray) -> np.n
 def calculate_new_B(
     result: Result,
     new_result: Result,
-    B: np.ndarray,
-    x_jm1: np.ndarray,
-    x_j: np.ndarray,
-    lamda_equality: np.ndarray,
-    lamda_inequality: np.ndarray,
-) -> np.ndarray:
+    B: MatrixType,
+    x_jm1: VectorType,
+    x_j: VectorType,
+    lamda_equality: VectorType,
+    lamda_inequality: VectorType,
+) -> MatrixType:
     """Updates the hessian approximation matrix."""
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
@@ -554,6 +557,6 @@ def calculate_new_B(
     return _revise_B(B, ksi, gamma)
 
 
-def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray) -> list[str]:
+def _find_out_of_bounds_vars(higher: VectorType, lower: VectorType) -> list[str]:
     """Return the indices of the out of bounds variables."""
     return np.nonzero((higher - lower) < 0)[0].astype(str).tolist()
