@@ -40,7 +40,8 @@ def solve(
     Parameters
     ----------
     problem : AbstractProblem
-        Defines the system to be minimised
+        Defines the system to be minimised optionally subject to constraints.
+        Inequality constraints are feasible when >= 0.
 
     x : ndarray
         The initial starting `x` of VMCON

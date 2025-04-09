@@ -85,6 +85,9 @@ class Problem(AbstractProblem):
     """A simple implementation of an AbstractProblem.
 
     It essentially acts as a caller to equations to gather all of the various data.
+
+    Note that VMCON assumes minimisation of f and that inequality constraints are
+    feasible when they return a value >= 0.
     """
 
     def __init__(
