@@ -1,8 +1,6 @@
 """Exceptions and errors raised within VMCON."""
 
-import numpy as np
-
-from .problem import Result
+from .problem import Result, VectorType
 
 
 class VMCONConvergenceException(Exception):
@@ -15,10 +13,10 @@ class VMCONConvergenceException(Exception):
     def __init__(
         self,
         *args: object,
-        x: np.ndarray | None = None,
+        x: VectorType | None = None,
         result: Result | None = None,
-        lamda_equality: np.ndarray | None = None,
-        lamda_inequality: np.ndarray | None = None,
+        lamda_equality: VectorType | None = None,
+        lamda_inequality: VectorType | None = None,
     ) -> None:
         """Constructs an exception raised within VMCON.
 
