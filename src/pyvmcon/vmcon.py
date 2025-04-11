@@ -544,7 +544,7 @@ def calculate_new_B(
 
     # eqn 8
     B_ksi = B @ ksi
-    B += (gamma @ gamma.T) / (ksi.T @ gamma) - ((B_ksi @ ksi.T @ B) / (ksi.T @ B_ksi))
+    B += (gamma @ gamma.T) / (ksi.T @ gamma) - ((B_ksi @ ksi.T @ B.T) / (ksi.T @ B_ksi))
 
     return B
 

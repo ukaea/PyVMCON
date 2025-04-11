@@ -164,7 +164,7 @@ The definition of :math:`\vec{\eta}` ensures :math:`\mathbf{B}` remains positive
 We can then perform the BFGS update:
 
 .. math::
-    \mathbf{B_{NEW}} = \mathbf{B} - \frac{\mathbf{B}\vec{\xi}\vec{\xi}^T\mathbf{B}}{\vec{\xi}^T\mathbf{B}\vec{\xi}} + \frac{ \vec{\eta} \vec{\eta}^T}{\vec{\xi}^T\vec{\eta}}
+    \mathbf{B_{NEW}} = \mathbf{B} - \frac{\mathbf{B}\vec{\xi}\vec{\xi}^T\mathbf{B}^T}{\vec{\xi}^T\mathbf{B}\vec{\xi}} + \frac{ \vec{\eta} \vec{\eta}^T}{\vec{\xi}^T\vec{\eta}}
 
 
 The VMCON Algorithm
