@@ -504,6 +504,18 @@ def _powells_gamma(gamma: np.ndarray, ksi: np.ndarray, B: np.ndarray) -> np.ndar
     return theta * gamma + (1 - theta) * (B @ ksi)  # eqn 9
 
 
+def _revise_B(current_B: np.ndarray, ksi: np.ndarray, gamma: np.ndarray) -> np.ndarray:
+    """Revises B using a BFGS update.
+
+    Implements Equation 8 of the Crane report.
+    """
+    return (
+        current_B
+        - ((current_B @ np.outer(ksi, ksi) @ current_B) / (ksi.T @ current_B @ ksi))
+        + (np.outer(gamma, gamma) / (ksi.T @ gamma))
+    )
+
+
 def calculate_new_B(
     result: Result,
     new_result: Result,
@@ -513,10 +525,7 @@ def calculate_new_B(
     lamda_equality: np.ndarray,
     lamda_inequality: np.ndarray,
 ) -> np.ndarray:
-    """Updates the hessian approximation matrix.
-
-    Uses Equation 8 of the Crane report.
-    """
+    """Updates the hessian approximation matrix."""
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
@@ -542,11 +551,7 @@ def calculate_new_B(
         logger.warning("All xi (ksi) components are 0")
         ksi[:] = 1e-10
 
-    # eqn 8
-    B_ksi = B @ ksi
-    B += (gamma @ gamma.T) / (ksi.T @ gamma) - ((B_ksi @ ksi.T @ B) / (ksi.T @ B_ksi))
-
-    return B
+    return _revise_B(B, ksi, gamma)
 
 
 def _find_out_of_bounds_vars(higher: np.ndarray, lower: np.ndarray) -> list[str]:
