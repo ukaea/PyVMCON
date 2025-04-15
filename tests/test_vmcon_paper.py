@@ -115,7 +115,27 @@ class VMCONTestAsset:
             initial_x=np.array([1.0, 1.0]),
             epsilon=2e-8,
             expected_x=[0.5 * 2**0.5, 0.5 * 2**0.5],  # Shouldn't these be negative?
+            # MC: Yes, they absolutely should be... see next test
+            # It would appear VMCON has a predilection for stationary points
+            # This solution is in fact the worst possible objective function value (maximum)
+            # whilst still satisfying the constraint.
             expected_lamda_equality=[2 ** (-0.5)],
+            expected_lamda_inequality=[],
+        ),
+        VMCONTestAsset(
+            Problem(
+                lambda x: x[0] + x[1],
+                lambda _: np.array([1, 1]),
+                [lambda x: (x[0] ** 2) + (x[1] ** 2) - 1],
+                [],
+                [lambda x: np.array([2 * x[0], 2 * x[1]])],
+                [],
+            ),
+            # Different starting solution yields the the true minimum
+            initial_x=np.array([-0.1, -0.1]),
+            epsilon=2e-8,
+            expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
+            expected_lamda_equality=[-0.5 * 2 ** (0.5)],
             expected_lamda_inequality=[],
         ),
     ],
@@ -180,4 +200,47 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
             vmcon_example.initial_x,
             max_iter=vmcon_example.max_iter,
             epsilon=vmcon_example.epsilon,
+        )
+
+
+@pytest.mark.parametrize(
+    "wikipedia_example",
+    [
+        VMCONTestAsset(
+            Problem(
+                lambda x: x[0] + x[1],
+                lambda _: np.array([1, 1]),
+                [lambda x: (x[0] ** 2) + (x[1] ** 2) - 1],
+                [],
+                [lambda x: np.array([2 * x[0], 2 * x[1]])],
+                [],
+            ),
+            # VMCON will struggle to escape this point in the QSP
+            initial_x=np.array([0.0, 0.0]),
+            epsilon=2e-8,
+            expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
+            expected_lamda_equality=[-0.5 * 2 ** (0.5)],
+            expected_lamda_inequality=[],
+        ),
+    ],
+)
+def test_wikipedia_example_failures(wikipedia_example: VMCONTestAsset):
+    """Tests runs of VMCON where the problem describes a minimisation
+    which is infeasible given the constraints.
+
+    Assertions on the returned `x` (the last tried input vector) and
+    corresponding Lagrange multipliers have been removed as the QSP
+    implementation produced different final points from the VMCON
+    paper. This is not surprising considering these problems are
+    infeasible and we deem the assertions to hold little meaning;
+    what is important--and thus tested--is that VMCON fails to
+    converge in these infeasible cases.
+    """
+    with pytest.raises(VMCONConvergenceException):
+        solve(
+            wikipedia_example.problem,
+            wikipedia_example.initial_x,
+            max_iter=wikipedia_example.max_iter,
+            epsilon=wikipedia_example.epsilon,
+            qsp_options={"max_iter": 10000},
         )
