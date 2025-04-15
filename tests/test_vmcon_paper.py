@@ -112,11 +112,12 @@ class VMCONTestAsset:
                 [lambda x: np.array([2 * x[0], 2 * x[1]])],
                 [],
             ),
-            initial_x=np.array([1.0, 1.0]),
-            epsilon=2e-8,
-            expected_x=[0.5 * 2**0.5, 0.5 * 2**0.5],  # Shouldn't these be negative?
-            expected_lamda_equality=[2 ** (-0.5)],
+            initial_x=np.array([1.0, 1.05]),
+            epsilon=1e-8,
+            expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
+            expected_lamda_equality=[-(2 ** (-0.5))],
             expected_lamda_inequality=[],
+            max_iter=30,
         ),
     ],
 )
