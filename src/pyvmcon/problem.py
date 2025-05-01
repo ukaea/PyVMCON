@@ -76,9 +76,8 @@ class AbstractProblem(ABC):
         return self.num_equality + self.num_inequality
 
 
-_ScalarFunctionAlias = Callable[[VectorType], ScalarType]
-_VectorFunctionAlias = Callable[[VectorType], VectorType]
-_MatrixFunctionAlias = Callable[[VectorType], np.ndarray]
+_ScalarReturnFunctionAlias = Callable[[VectorType], ScalarType]
+_VectorReturnFunctionAlias = Callable[[VectorType], VectorType]
 
 
 class Problem(AbstractProblem):
@@ -92,12 +91,12 @@ class Problem(AbstractProblem):
 
     def __init__(
         self,
-        f: _ScalarFunctionAlias,
-        df: _VectorFunctionAlias,
-        equality_constraints: list[_VectorFunctionAlias],
-        inequality_constraints: list[_VectorFunctionAlias],
-        dequality_constraints: list[_MatrixFunctionAlias],
-        dinequality_constraints: list[_MatrixFunctionAlias],
+        f: _ScalarReturnFunctionAlias,
+        df: _VectorReturnFunctionAlias,
+        equality_constraints: list[_ScalarReturnFunctionAlias],
+        inequality_constraints: list[_ScalarReturnFunctionAlias],
+        dequality_constraints: list[_VectorReturnFunctionAlias],
+        dinequality_constraints: list[_VectorReturnFunctionAlias],
     ) -> None:
         """Construct the problem."""
         super().__init__()
