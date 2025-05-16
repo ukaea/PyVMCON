@@ -60,8 +60,10 @@ The Quadratic Programming Problem
 The Quadratic Programming Probelm (QPP) will also be known as the Quadratic Sub-Problem (QSP) because it forms only a part of the
 VMCON algorithm--with the other half being the Augmented Lagrangian.
 
-The QPP provides the search direction :math:`\delta_j` which is a vector upon which :math:`\vec{x}_j` will lay.
-Solving the QPP also provides the Lagrange multipliers, :math:`\lambda_{j}`.
+The function :math:`Q(\delta)` is a quadratic approximation of the Lagrangian function.
+Minimising :math:`Q(\delta)` subject to a linearisation of our constraints about :math:`\vec{x}_{j-1}` (aka solving the QPP)
+provides the search direction :math:`\delta_j` from :math:`\vec{x}_{j-1}` upon which :math:`\vec{x}_j` will lay.
+Solving the QPP also provides the Lagrange multipliers (:math:`\lambda_{j}`).
 
 The quadratic program to be minimised on iteration :math:`j` is:
 
