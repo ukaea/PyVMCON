@@ -59,7 +59,7 @@ def test_revise_B(test_asset):
     new_B = _revise_B(test_asset.B, test_asset.ksi, test_asset.eta)
 
     # check symmetric
-    np.testing.assert_array_almost_equal(new_B, new_B.T, decimal=14)
+    np.testing.assert_array_equal(new_B, new_B.T)
 
     # check our revision agrees with NEA version of VMCON
     np.testing.assert_array_almost_equal(new_B, test_asset.expected_return, decimal=14)
