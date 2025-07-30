@@ -513,9 +513,20 @@ def _revise_B(current_B: MatrixType, ksi: VectorType, gamma: VectorType) -> Matr
 
     Implements Equation 8 of the Crane report.
     """
+    # numerator of the second term
+    term2a = current_B @ np.outer(ksi, ksi) @ current_B
+
+    # term2a will be ever so slightly non-symmetric despite the fact
+    # Bxx^TB is mathematically guaranteed to be symmetric when
+    # B is a real matrix and x is a real vector.
+    # This is because of slight numerical rounding error.
+    # To ensure this error does not accumulate over time and become a problem,
+    # we 'symmetrise' the term by meeting in the middle of the absolute error.
+    term2a = (term2a + term2a.T) / 2.0
+
     return (
         current_B
-        - ((current_B @ np.outer(ksi, ksi) @ current_B) / (ksi.T @ current_B @ ksi))
+        - (term2a / (ksi.T @ current_B @ ksi).item())
         + (np.outer(gamma, gamma) / (ksi.T @ gamma))
     )
 
