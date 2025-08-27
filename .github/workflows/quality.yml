@@ -1,4 +1,6 @@
 name: PyVMCON quality assurance workflow
+permissions:
+  contents: read
 on:
   pull_request:
   push:
