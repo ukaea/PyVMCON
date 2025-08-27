@@ -1,4 +1,6 @@
 name: PyVMCON test workflow
+permissions:
+  contents: read
 on:
   pull_request:
   push:
