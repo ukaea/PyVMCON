@@ -29,10 +29,9 @@ def solve(
     qsp_options: dict[str, Any] | None = None,
     initial_B: np.ndarray | None = None,
     callback: Callable[[int, Result, VectorType, float], None] | None = None,
-    additional_convergence: Callable[
-        [Result, VectorType, VectorType, VectorType, VectorType], None
-    ]
-    | None = None,
+    additional_convergence: (
+        Callable[[Result, VectorType, VectorType, VectorType, VectorType], None] | None
+    ) = None,
     overwrite_convergence_criteria: bool = False,
 ) -> tuple[VectorType, VectorType, VectorType, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
@@ -108,11 +107,11 @@ def solve(
 
     if lbs is not None and (x < lbs).any():
         msg = (
-            "x is initially in an infeasible region because at least one x is lower"
+            "x is initially in an infeasible region because at least one x is lower "
             "than a lower bound"
         )
         error_msg = (
-            f"{msg}. The out of bounds variables are at indices"
+            f"{msg}. The out of bounds variables are at indices "
             f"{', '.join(_find_out_of_bounds_vars(x, lbs))} (0-based indexing)"
         )
         logger.error(
@@ -122,11 +121,11 @@ def solve(
 
     if ubs is not None and (x > ubs).any():
         msg = (
-            "x is initially in an infeasible region because at least one x is greater"
+            "x is initially in an infeasible region because at least one x is greater "
             "than an upper bound"
         )
         error_msg = (
-            f"{msg}. The out of bounds variables are at indices"
+            f"{msg}. The out of bounds variables are at indices "
             f"{', '.join(_find_out_of_bounds_vars(ubs, x))} (0-based indexing)"
         )
         logger.error(error_msg)
