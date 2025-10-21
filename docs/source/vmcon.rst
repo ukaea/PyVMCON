@@ -47,17 +47,15 @@ VMCON is initialised with:
 * The objective function to minimise, :math:`f(\vec{x})`, as described above.
 * The constraints :math:`c_i(\vec{x}), i = 1,...,m`, as described above.
 * An initial sample point :math:`\vec{x}_0`.
-* :math:`\mathbf{B}`: the initial Hessian approximation matrix, usually the identity matrix.
+* :math:`\mathbf{B}`: the initial Hessian approximation matrix, usually the identity matrix (:math:`n\times n`).
 * :math:`\epsilon`: the "user-supplied error tolerance".
-
-It should be noted that :math:`\mathbf{B}` will need to be of dimension :math:`d \times d` where :math:`d = \mathrm{max}(n, m)`.
 
 We also set the iteration number to 1, :math:`j=1`.
 
 
 The Quadratic Programming Problem
 ---------------------------------
-The Quadratic Programming Probelm (QPP) will also be known as the Quadratic Sub-Problem (QSP) because it forms only a part of the
+The Quadratic Programming Problem (QPP) will also be known as the Quadratic Sub-Problem (QSP) because it forms only a part of the
 VMCON algorithm--with the other half being the Augmented Lagrangian.
 
 The function :math:`Q(\delta)` is a quadratic approximation of the Lagrangian function.
@@ -83,7 +81,7 @@ The Convergence Test
 The convergence test is performed on the :math:`j`'th iteration after the QSP. The convergence test is the sum of two terms:
 
 * The predicted change in magnitude of the objective function.
-* The complimentary error; where the complimentary error being 0 would mean that a specific constraint is at equality or the Lagrange multipliers are 0.
+* The complementary error; where the complementary error being 0 would mean that a specific constraint is at equality or the Lagrange multipliers are 0.
 
 This is encapsulated in the equation:
 
@@ -101,7 +99,7 @@ The line search helps to mitigate poor initial conditions. It does this by searc
 :math:`\alpha` is found via the minimisation of:
 
 .. math::
-    \phi(\alpha) = f(\vec{x}_j) + \sum_{i=1}^k \vec{\mu}_{j,i}|c_i(\vec{x}_j)| + \sum_{i=k+1}^m \vec{\mu}_{j,i}|min(c_i(0, \vec{x}_j))|
+    \phi(\alpha) = f(\vec{x}_j) + \sum_{i=1}^k \vec{\mu}_{j,i}|c_i(\vec{x}_j)| + \sum_{i=k+1}^m \vec{\mu}_{j,i}|min(0, c_i(\vec{x}_j))|
 
 
 On the :math:`j` th iteration,  :math:`\vec{\mu}_{j,i}` is a 1D vector which contains :math:`i = 1,...,m` elements.
@@ -113,7 +111,7 @@ On the first iteration:
 On subsequent iterations:
 
 .. math::
-    \vec{\mu}_j = max[|\vec{\lambda}_0|, \frac{1}{2}(\vec{\mu}_{j-1} + |\vec{\lambda}_j|)]
+    \vec{\mu}_j = \max[|\vec{\lambda}_j|, \frac{1}{2}(\vec{\mu}_{j-1} + |\vec{\lambda}_j|)]
 
 The line search iterates for a maximum of 10 steps and exits if the chosen value of :math:`\alpha` satisfies either the Armijo condition:
 
@@ -161,7 +159,7 @@ where
     \end{cases}
 
 
-The definition of :math:`\vec{\eta}` ensures :math:`\mathbf{B}` remains positive semi-definite, which is a prereqesite to solving the QSP.
+The definition of :math:`\vec{\eta}` ensures :math:`\mathbf{B}` remains positive semi-definite, which is a prerequisite to solving the QSP.
 
 We can then perform the BFGS update:
 

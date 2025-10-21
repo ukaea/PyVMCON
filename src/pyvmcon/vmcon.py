@@ -161,7 +161,7 @@ def solve(
     lamda_equality = None
     lamda_inequality = None
 
-    for i in range(max_iter):
+    for j in range(max_iter):
         result = problem(x)
 
         # solve the quadratic subproblem to identify
@@ -198,7 +198,7 @@ def solve(
             lamda_inequality,
         )
 
-        callback(i, result, x, convergence_info)
+        callback(j, result, x, convergence_info)
 
         if additional_convergence(
             result,
@@ -386,12 +386,12 @@ def convergence_value(
     return abs_df_dot_delta + abs_equality_err + abs_inequality_err
 
 
-def _calculate_mu_i(mu_im1: np.ndarray | None, lamda: np.ndarray) -> np.ndarray:
-    if mu_im1 is None:
+def _calculate_mu_j(mu_jm1: np.ndarray | None, lamda: np.ndarray) -> np.ndarray:
+    if mu_jm1 is None:
         return np.abs(lamda)
 
-    # element-wise maximum is assumed
-    return np.maximum(np.abs(lamda), 0.5 * (mu_im1 + np.abs(lamda)))
+    # element-wise maximum
+    return np.maximum(np.abs(lamda), 0.5 * (mu_jm1 + np.abs(lamda)))
 
 
 def perform_linesearch(
@@ -435,8 +435,8 @@ def perform_linesearch(
         The current input vector.
 
     """
-    mu_equality = _calculate_mu_i(mu_equality, lamda_equality)
-    mu_inequality = _calculate_mu_i(mu_inequality, lamda_inequality)
+    mu_equality = _calculate_mu_j(mu_equality, lamda_equality)
+    mu_inequality = _calculate_mu_j(mu_inequality, lamda_inequality)
 
     def phi(result: Result) -> ScalarType:
         sum_equality = (mu_equality * np.abs(result.eq)).sum()
