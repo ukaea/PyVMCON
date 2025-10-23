@@ -543,7 +543,7 @@ def calculate_new_B(
     # xi (the symbol name) would be a bit confusing in this context,
     # ksi is how its pronounced in modern greek
     # reshape ksi to be a matrix
-    ksi = (x_j - x_jm1).reshape((x_j.shape[0], 1))
+    ksi = (x_j - x_jm1)[:, np.newaxis]
 
     g1 = _derivative_lagrangian(
         new_result,
@@ -555,19 +555,19 @@ def calculate_new_B(
         lamda_equality,
         lamda_inequality,
     )
-    gamma = _powells_gamma((g1 - g2).reshape((x_j.shape[0], 1)), ksi, B)
+    gamma = _powells_gamma((g1 - g2)[:, np.newaxis], ksi, B)
 
     if (gamma == 0).all():
-        logger.warning("All gamma components are 0")
+        logger.error("All gamma components are 0")
         gamma[:] = 1e-10
 
     if (ksi == 0).all():
-        logger.warning("All xi (ksi) components are 0")
+        logger.error("All xi (ksi) components are 0")
         ksi[:] = 1e-10
 
     return _revise_B(B, ksi, gamma)
 
 
 def _find_out_of_bounds_vars(higher: VectorType, lower: VectorType) -> list[str]:
-    """Return the indices of the out of bounds variables."""
+    """Return the indices of the out-of-bounds variables."""
     return np.nonzero((higher - lower) < 0)[0].astype(str).tolist()
