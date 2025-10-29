@@ -140,6 +140,12 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
     assert lamda_equality == pytest.approx(vmcon_example.expected_lamda_equality)
     assert lamda_inequality == pytest.approx(vmcon_example.expected_lamda_inequality)
 
+    if vmcon_example.lbs is not None:
+        assert (x >= vmcon_example.lbs).all()
+
+    if vmcon_example.ubs is not None:
+        assert (x <= vmcon_example.ubs).all()
+
 
 @pytest.mark.parametrize(
     "vmcon_example",
