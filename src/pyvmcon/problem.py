@@ -93,20 +93,20 @@ class Problem(AbstractProblem):
         self,
         f: _ScalarReturnFunctionAlias,
         df: _VectorReturnFunctionAlias,
-        equality_constraints: list[_ScalarReturnFunctionAlias],
-        inequality_constraints: list[_ScalarReturnFunctionAlias],
-        dequality_constraints: list[_VectorReturnFunctionAlias],
-        dinequality_constraints: list[_VectorReturnFunctionAlias],
+        equality_constraints: list[_ScalarReturnFunctionAlias] | None = None,
+        inequality_constraints: list[_ScalarReturnFunctionAlias] | None = None,
+        dequality_constraints: list[_VectorReturnFunctionAlias] | None = None,
+        dinequality_constraints: list[_VectorReturnFunctionAlias] | None = None,
     ) -> None:
         """Construct the problem."""
         super().__init__()
 
         self._f = f
         self._df = df
-        self._equality_constraints = equality_constraints
-        self._inequality_constraints = inequality_constraints
-        self._dequality_constraints = dequality_constraints
-        self._dinequality_constraints = dinequality_constraints
+        self._equality_constraints = equality_constraints or []
+        self._inequality_constraints = inequality_constraints or []
+        self._dequality_constraints = dequality_constraints or []
+        self._dinequality_constraints = dinequality_constraints or []
 
     def __call__(self, x: VectorType) -> Result:
         """Evaluate the problem at input point x."""
