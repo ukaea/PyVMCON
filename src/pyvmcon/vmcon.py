@@ -377,11 +377,9 @@ def convergence_value(
         evaluation point.
 
     """
-    ind_eq = min(lamda_equality.shape[0], result.eq.shape[0])
-    ind_ieq = min(lamda_inequality.shape[0], result.ie.shape[0])
     abs_df_dot_delta = abs(np.dot(result.df, delta_j))
-    abs_equality_err = abs(np.sum(lamda_equality[:ind_eq] * result.eq[:ind_eq]))
-    abs_inequality_err = abs(np.sum(lamda_inequality[:ind_ieq] * result.ie[:ind_ieq]))
+    abs_equality_err = abs(np.sum(lamda_equality * result.eq))
+    abs_inequality_err = abs(np.sum(lamda_inequality * result.ie))
 
     return abs_df_dot_delta + abs_equality_err + abs_inequality_err
 
