@@ -324,7 +324,12 @@ def solve_qsp(
         constraints.append((result.deq @ delta) + result.eq == 0)
 
     qsp = cp.Problem(problem_statement, constraints or None)
-    qsp.solve(**{"solver": cp.OSQP, **options})
+
+    try:
+        qsp.solve(**{"solver": cp.OSQP, **options})
+    except cp.SolverError as e:
+        error_msg = "QSP failed to solve due to CVXPY solver error"
+        raise _QspSolveException(error_msg) from e
 
     if delta.value is None:
         error_msg = f"QSP failed to solve: {qsp.status}"
