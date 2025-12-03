@@ -327,7 +327,7 @@ def solve_qsp(
 
     try:
         qsp.solve(**{"solver": cp.OSQP, **options})
-    except cp.SolverError as e:
+    except (cp.SolverError, cp.DCPError) as e:
         error_msg = "QSP failed to solve due to CVXPY solver error"
         raise _QspSolveException(error_msg) from e
 
