@@ -519,14 +519,15 @@ def _revise_B(current_B: MatrixType, ksi: VectorType, gamma: VectorType) -> Matr
     # Bxx^TB is mathematically guaranteed to be symmetric when
     # B is a real matrix and x is a real vector.
     # This is because of slight numerical rounding error.
-    # To ensure this error does not accumulate over time and become a problem,
-    # we 'symmetrise' the term by meeting in the middle of the absolute error.
-    term2a = (term2a + term2a.T) / 2.0
+    # VMCON requires B is symmetric therefore we force that to avoid potential
+    # errors later on (e.g. some cases where B is no longer positive semi-definite)
+    triangle_indices = np.tril_indices_from(term2a)
+    term2a[triangle_indices] = term2a.T[triangle_indices]
 
     return (
         current_B
         - (term2a / (ksi.T @ current_B @ ksi).item())
-        + (np.outer(gamma, gamma) / (ksi.T @ gamma))
+        + (np.outer(gamma, gamma) / (ksi.T @ gamma).item())
     )
 
 
@@ -565,7 +566,15 @@ def calculate_new_B(
         logger.error("All xi (ksi) components are 0")
         ksi[:] = 1e-10
 
-    return _revise_B(B, ksi, gamma)
+    new_B = _revise_B(B, ksi, gamma)
+
+    if (np.linalg.eigvals(new_B) < 0.0).any():
+        logger.error(
+            "The B matrix has at least one negative eigenvalue meaning it is no"
+            " longer positive semi-definite. This will cause a crash next iteration!"
+        )
+
+    return new_B
 
 
 def _find_out_of_bounds_vars(higher: VectorType, lower: VectorType) -> list[str]:
