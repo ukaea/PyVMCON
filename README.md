@@ -28,4 +28,4 @@ Tests can be run using `pytest tests/`. The tests check the paper examples are r
 ## License
 PyVMCON is provided under the MIT license, please see the LICENSE file for full details.
 
-Copyright (c) 2023-2025 UK Atomic Energy Authority
+Copyright (c) 2023-present UK Atomic Energy Authority
