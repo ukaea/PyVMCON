@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+authors:
+  - given-names: Timothy
+    family-names: Nunn
+    affiliation: United Kingdom Atomic Energy Authority
+    orcid: https://orcid.org/0000-0001-7608-5512
+
+title: "PyVMCON"
+license: MIT
+repository-code: "https://github.com/ukaea/PyVMCON"
+message: If you use PyVMCON, please cite it using the metadata from this file.
+
+references:
+  - title: "Solution of the general nonlinear programming problem with subroutine VMCON."
+    type: article
+    authors:
+      - family-names: Crane
+        given-names: R
+      - family-names: Hillstrom
+        given-names: K
+      - family-names: Minkoff
+        given-names: M
+    year: 1980
+    doi: 10.2172/5206574
+  - title: "A fast algorithm for nonlinearly constrained optimization calculations"
+    type: article
+    authors:
+      - family-names: Powell
+        given-names: Michael
+    year: 1977
+    journal: "Watson, G.A. (eds) Numerical Analysis. Lecture Notes in Mathematics"
+    pages: 144-157
+    volume: 630
+    doi: 10.1007/BFb0067703
