@@ -121,7 +121,9 @@ class VMCONTestAsset:
         ),
     ],
 )
-def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
+def test_vmcon_paper_feasible_examples(
+    matrix_over_allow_slack_constraints, vmcon_example: VMCONTestAsset
+):
     """Tests an example of VMCON from the Crane paper.
 
     Overall, we assert that this implementation produces similar results to
@@ -134,6 +136,7 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
         vmcon_example.ubs,
         max_iter=vmcon_example.max_iter,
         epsilon=vmcon_example.epsilon,
+        allow_slack_constraints=matrix_over_allow_slack_constraints,
     )
 
     assert x == pytest.approx(vmcon_example.expected_x)
@@ -167,7 +170,9 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
         ),
     ],
 )
-def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
+def test_vmcon_paper_infeasible_examples(
+    matrix_over_allow_slack_constraints, vmcon_example: VMCONTestAsset
+):
     """Tests runs of VMCON from the Crane paper.
 
     The problem describes a minimisation which is infeasible given the constraints
@@ -187,4 +192,5 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
             vmcon_example.initial_x,
             max_iter=vmcon_example.max_iter,
             epsilon=vmcon_example.epsilon,
+            allow_slack_constraints=matrix_over_allow_slack_constraints,
         )

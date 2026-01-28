@@ -33,6 +33,7 @@ def solve(
         Callable[[Result, VectorType, VectorType, VectorType, VectorType], None] | None
     ) = None,
     overwrite_convergence_criteria: bool = False,
+    allow_slack_constraints: bool = False,
 ) -> tuple[VectorType, VectorType, VectorType, Result]:
     """The main solving loop of the VMCON non-linear constrained optimiser.
 
@@ -176,6 +177,7 @@ def solve(
                 lbs,
                 ubs,
                 qsp_options or {},
+                allow_slack_constraints=allow_slack_constraints,
             )
         except _QspSolveException as e:
             error_msg = (
@@ -264,6 +266,9 @@ def solve_qsp(
     lbs: VectorType | None,
     ubs: VectorType | None,
     options: dict[str, Any],
+    *,
+    allow_slack_constraints: bool = False,
+    ksi_penalty_scale=1e3,
 ) -> tuple[VectorType, VectorType, VectorType]:
     """Solves the quadratic programming problem.
 
@@ -313,17 +318,45 @@ def solve_qsp(
             ubs - x if ubs is not None else None,
         ],
     )
-    problem_statement = cp.Minimize(
-        result.f + (0.5 * cp.quad_form(delta, B)) + (delta.T @ result.df),
+
+    num_constraints = problem.num_equality + problem.num_inequality
+    ksi = cp.Variable(num_constraints or 1, bounds=[0.0, 1.0])
+
+    minimise_expression = (
+        result.f + (0.5 * cp.quad_form(delta, B)) + (delta.T @ result.df)
     )
+    if allow_slack_constraints:
+        ksi_penalty_factor = ksi_penalty_scale * np.diag(B.T @ B).max()
+        # subtract the sum of ksi (scaled to the order of B) because we want to maximise
+        # ksi (for it to be as close to 1 as possible, because this means the constraint
+        # can be satisfied without modifying it)
+        minimise_expression -= ksi_penalty_factor * cp.sum(ksi)
 
     constraints = []
-    if problem.has_inequality:
-        constraints.append((result.die @ delta) + result.ie >= 0)
-    if problem.has_equality:
-        constraints.append((result.deq @ delta) + result.eq == 0)
+    for con_idx in range(problem.num_equality):
+        if allow_slack_constraints:
+            constraints.append(
+                (result.deq[con_idx, :] @ delta) + result.eq[con_idx] * ksi[con_idx]
+                == 0
+            )
+        else:
+            constraints.append(
+                (result.deq[con_idx, :] @ delta) + result.eq[con_idx] == 0
+            )
 
-    qsp = cp.Problem(problem_statement, constraints or None)
+    for con_idx in range(problem.num_inequality):
+        if result.ie[con_idx] <= 0 and allow_slack_constraints:
+            constraints.append(
+                (result.die[con_idx, :] @ delta)
+                + result.ie[con_idx] * ksi[problem.num_equality + con_idx]
+                >= 0
+            )
+        else:
+            constraints.append(
+                (result.die[con_idx, :] @ delta) + result.ie[con_idx] >= 0
+            )
+
+    qsp = cp.Problem(cp.Minimize(minimise_expression), constraints or None)
 
     try:
         qsp.solve(**{"solver": cp.OSQP, **options})
@@ -335,18 +368,17 @@ def solve_qsp(
         error_msg = f"QSP failed to solve: {qsp.status}"
         raise _QspSolveException(error_msg)
 
-    lamda_equality = np.array([])
-    lamda_inequality = np.array([])
-
-    if problem.has_inequality and problem.has_equality:
-        lamda_inequality = qsp.constraints[0].dual_value
-        lamda_equality = -qsp.constraints[1].dual_value
-
-    elif problem.has_inequality and not problem.has_equality:
-        lamda_inequality = qsp.constraints[0].dual_value
-
-    elif not problem.has_inequality and problem.has_equality:
-        lamda_equality = -qsp.constraints[0].dual_value
+    lamda_equality = np.array(
+        [-i.dual_value for i in qsp.constraints[: problem.num_equality]]
+    )
+    lamda_inequality = np.array(
+        [
+            i.dual_value
+            for i in qsp.constraints[
+                problem.num_equality : problem.num_equality + problem.num_inequality
+            ]
+        ]
+    )
 
     return delta.value, lamda_equality, lamda_inequality
 

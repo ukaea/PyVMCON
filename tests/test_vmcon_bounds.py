@@ -14,13 +14,14 @@ from pyvmcon.vmcon import solve
         (Problem(f=lambda x: -x[0], df=lambda _: np.array([-1])), 10.0),
     ],
 )
-def test_vmcon_1d_10bounds(problem, expected):
+def test_vmcon_1d_10bounds(matrix_over_allow_slack_constraints, problem, expected):
     x, _, _, _ = solve(
         problem=problem,
         x=np.array([0.0]),
         lbs=np.array([-10]),
         ubs=np.array([10]),
         max_iter=100,
+        allow_slack_constraints=matrix_over_allow_slack_constraints,
     )
 
     assert x.item() == expected
@@ -39,13 +40,14 @@ def test_vmcon_1d_10bounds(problem, expected):
         ),
     ],
 )
-def test_vmcon_2d_1020bounds(problem, expected):
+def test_vmcon_2d_1020bounds(matrix_over_allow_slack_constraints, problem, expected):
     x, _, _, _ = solve(
         problem=problem,
         x=np.array([0.0, 0.0]),
         lbs=np.array([-10, -20]),
         ubs=np.array([20, 10]),
         max_iter=100,
+        allow_slack_constraints=matrix_over_allow_slack_constraints,
     )
 
     assert (x == expected).all()
