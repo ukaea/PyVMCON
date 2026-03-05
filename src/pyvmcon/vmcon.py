@@ -2,10 +2,12 @@
 
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import cvxpy as cp
 import numpy as np
+
+from pyvmcon.problem import AbstractProblem, MatrixType, Result, ScalarType, VectorType
 
 from .exceptions import (
     LineSearchConvergenceException,
@@ -13,7 +15,6 @@ from .exceptions import (
     VMCONConvergenceException,
     _QspSolveException,
 )
-from .problem import AbstractProblem, MatrixType, Result, ScalarType, VectorType
 
 logger = logging.getLogger(__name__)
 
@@ -439,8 +440,10 @@ def perform_linesearch(
     mu_inequality = _calculate_mu_j(mu_inequality, lamda_inequality)
 
     def phi(result: Result) -> ScalarType:
-        sum_equality = (mu_equality * np.abs(result.eq)).sum()
-        sum_inequality = (mu_inequality * np.abs(np.minimum(0, result.ie))).sum()
+        sum_equality: ScalarType = (mu_equality * np.abs(result.eq)).sum()
+        sum_inequality: ScalarType = (
+            mu_inequality * np.abs(np.minimum(0, result.ie))
+        ).sum()
 
         return result.f + sum_equality + sum_inequality
 
@@ -476,7 +479,7 @@ def perform_linesearch(
             lamda_inequality=lamda_inequality,
         )
 
-    return alpha, mu_equality, mu_inequality, new_result
+    return cast("ScalarType", alpha), mu_equality, mu_inequality, new_result
 
 
 def _derivative_lagrangian(
