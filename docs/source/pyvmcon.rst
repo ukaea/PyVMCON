@@ -5,15 +5,18 @@ pyvmcon.vmcon module
 --------------------
 
 .. automodule:: pyvmcon.vmcon
-   :members:
+   :members: solve
+
+pyvmcon.problem module
+----------------------
+.. automodule:: pyvmcon.problem
+   :members: Problem, Result, AbstractProblem
    :undoc-members:
    :show-inheritance:
-   :exclude-members: solve
 
-Module contents
----------------
-
-.. automodule:: pyvmcon
+pyvmcon.exceptions module
+-------------------------
+.. automodule:: pyvmcon.exceptions
    :members:
    :undoc-members:
    :show-inheritance:
