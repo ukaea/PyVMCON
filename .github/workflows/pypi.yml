@@ -21,5 +21,5 @@ jobs:
         run: python3 -m pip install build
       - name: Build a binary wheel and a source tarball
         run: python3 -m build --sdist --wheel --outdir dist/ .
-      - name: Publish PyVMCON to Test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish PyVMCON to PyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
