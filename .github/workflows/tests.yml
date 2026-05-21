@@ -20,9 +20,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - name: Install pytest
-        run: pip install pytest
-      - name: Install PyVMCON
-        run: pip install .
+      - name: Install PyVMCON with testing dependencies (pytest)
+        run: pip install '.[test]'
       - name: Run pytest
         run: pytest tests/
