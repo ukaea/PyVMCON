@@ -23,6 +23,7 @@ Documentation = "https://ukaea.github.io/PyVMCON/"
 Source = "https://github.com/ukaea/PyVMCON"
 
 [project.optional-dependencies]
+test = ["pytest"]
 docs = [
     "Sphinx>=6.1",
     "sphinxcontrib-mermaid>=0.9",
@@ -56,3 +57,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "*.ipynb" = ["T201", "S311", "ANN", "D103"]
 "tests/*" = ["INP001", "ANN", "D103", "S101", "SLF001", "PLR0915", "PLR2004"]
+
+[tool.ruff.format]
+preview = true
