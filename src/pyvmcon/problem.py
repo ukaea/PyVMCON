@@ -1,7 +1,8 @@
 """Defines the interface for VMCON to exchange data with external software."""
 
+import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import TypeVar, cast
 
@@ -36,6 +37,22 @@ class Result:
     """2D array of the derivatives of the inequality constraints wrt
     each input variable.
     """
+
+    def __iter__(self) -> Iterator[ScalarType | VectorType | MatrixType]:
+        """Convert the dataclass into an iterable.
+
+        .. deprecated:: 2.4.2
+                    Result is now a dataclass so should not be iterated over
+                    (including tuple unpacking the object).
+        """
+        warnings.warn(
+            "Using the Result class as a namedtuple is deprecated (e.g. by tuple "
+            "unpacking the object). Instead you should access individual attributes of "
+            "the dataclass.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return iter((self.f, self.df, self.eq, self.deq, self.ie, self.die))
 
 
 class AbstractProblem(ABC):
@@ -126,3 +143,28 @@ class Problem(AbstractProblem):
     def num_inequality(self) -> int:
         """The number of inequality constraints this problem has."""
         return len(self.inequality_constraints)
+
+    def __iter__(
+        self,
+    ) -> Iterator[_ScalarReturnFunctionAlias | _VectorReturnFunctionAlias]:
+        """Convert the dataclass into an iterable.
+
+        .. deprecated:: 2.4.2
+                    Problem is now a dataclass so should not be iterated over
+                    (including tuple unpacking the object).
+        """
+        warnings.warn(
+            "Using the Problem class as a namedtuple is deprecated (e.g. by tuple "
+            "unpacking the object). Instead you should access individual attributes of "
+            "the dataclass.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return iter((
+            self.f,
+            self.df,
+            self.equality_constraints,
+            self.inequality_constraints,
+            self.dequality_constraints,
+            self.dinequality_constraints,
+        ))
