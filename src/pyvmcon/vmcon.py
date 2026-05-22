@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
 
 import cvxpy as cp
 import numpy as np
@@ -481,7 +481,7 @@ def perform_linesearch(
             lamda_inequality=lamda_inequality,
         )
 
-    return cast("ScalarType", alpha), mu_equality, mu_inequality, new_result
+    return alpha, mu_equality, mu_inequality, new_result
 
 
 def _derivative_lagrangian(
