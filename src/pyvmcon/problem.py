@@ -8,11 +8,11 @@ from typing import TypeAlias
 import numpy as np
 from numpy.typing import NDArray
 
-ScalarType: TypeAlias = NDArray | np.number | float
+ScalarType: TypeAlias = NDArray[np.floating] | np.floating | float
 """A scalar variable e.g. a single number (which could be a 0D numpy array)"""
-VectorType: TypeAlias = NDArray
+VectorType: TypeAlias = NDArray[np.floating]
 """A numpy array with only 1 dimension"""
-MatrixType: TypeAlias = NDArray
+MatrixType: TypeAlias = VectorType
 """A numpy array with 2 dimensions"""
 
 
