@@ -61,6 +61,3 @@ ignore = [
 
 [tool.ruff.format]
 preview = true
-
-[tool.ty.rules]
-unresolved-import = "ignore"

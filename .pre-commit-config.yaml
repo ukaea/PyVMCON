@@ -17,4 +17,4 @@ repos:
         name: ty check
         entry: ty check .
         pass_filenames: false
-        language: python
+        language: system
