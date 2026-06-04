@@ -146,7 +146,12 @@ class Problem(AbstractProblem):
 
     def __iter__(
         self,
-    ) -> Iterator[_ScalarReturnFunctionAlias | _VectorReturnFunctionAlias]:
+    ) -> Iterator[
+        _ScalarReturnFunctionAlias
+        | _VectorReturnFunctionAlias
+        | list[_ScalarReturnFunctionAlias]
+        | list[_VectorReturnFunctionAlias]
+    ]:
         """Convert the dataclass into an iterable.
 
         .. deprecated:: 2.4.2
