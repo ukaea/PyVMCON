@@ -22,6 +22,9 @@ pip install .
 ## Documentation
 Documentation for the VMCON algorithm and PyVMCON API/use can be found on our [**GitHub pages**](https://ukaea.github.io/PyVMCON/). The documentation includes references to the VMCON paper and other helpful resources.
 
+## Citing PyVMCON
+If you use PyVMCON in your work, please cite it using the "Cite this repository" link in the "About" section of the repository. This will cite the latest version of PyVMCON, if you are using a different release, please find the appropriate DOI on [PyVMCON's Zenodo page](https://doi.org/10.5281/zenodo.20544473).
+
 ## Testing
 Tests can be run by installing the optional test dependencies `pip install 'PyVMCON[test]'` and then running `pytest tests/`. The tests check the examples from the original VMCON paper are replicated.
 
