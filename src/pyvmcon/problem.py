@@ -4,16 +4,16 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import TypeVar, cast
+from typing import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
-ScalarType = TypeVar("ScalarType", NDArray, np.number, float)
+ScalarType: TypeAlias = NDArray[np.floating] | np.floating | float
 """A scalar variable e.g. a single number (which could be a 0D numpy array)"""
-VectorType = NDArray
+VectorType: TypeAlias = NDArray[np.floating]
 """A numpy array with only 1 dimension"""
-MatrixType = NDArray
+MatrixType: TypeAlias = VectorType
 """A numpy array with 2 dimensions"""
 
 
@@ -128,10 +128,10 @@ class Problem(AbstractProblem):
         return Result(
             self.f(x),
             self.df(x),
-            cast("VectorType", np.array([c(x) for c in self.equality_constraints])),
-            cast("MatrixType", np.array([c(x) for c in self.dequality_constraints])),
-            cast("VectorType", np.array([c(x) for c in self.inequality_constraints])),
-            cast("MatrixType", np.array([c(x) for c in self.dinequality_constraints])),
+            np.array([c(x) for c in self.equality_constraints]),
+            np.array([c(x) for c in self.dequality_constraints]),
+            np.array([c(x) for c in self.inequality_constraints]),
+            np.array([c(x) for c in self.dinequality_constraints]),
         )
 
     @property

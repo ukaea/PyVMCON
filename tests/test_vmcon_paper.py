@@ -19,8 +19,8 @@ class VMCONTestAsset:
     expected_x: np.ndarray
     expected_lamda_equality: np.ndarray
     expected_lamda_inequality: np.ndarray
-    lbs: np.ndarray = None
-    ubs: np.ndarray = None
+    lbs: np.ndarray | None = None
+    ubs: np.ndarray | None = None
     max_iter: int = 10
     epsilon: float = 1e-8
 
@@ -39,9 +39,9 @@ class VMCONTestAsset:
                 [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
             ),
             initial_x=np.array([2.0, 2.0]),
-            expected_x=[8.228756e-1, 9.114378e-1],
-            expected_lamda_equality=[-1.594491],
-            expected_lamda_inequality=[1.846591],
+            expected_x=np.array([8.228756e-1, 9.114378e-1]),
+            expected_lamda_equality=np.array([-1.594491]),
+            expected_lamda_inequality=np.array([1.846591]),
         ),
         # Test 1 detailed in ANL-80-64 page 25
         # with one of the constraints duplicated
@@ -57,11 +57,11 @@ class VMCONTestAsset:
                 [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
             ),
             initial_x=np.array([2.0, 2.0]),
-            expected_x=[8.228756e-1, 9.114378e-1],
+            expected_x=np.array([8.228756e-1, 9.114378e-1]),
             # duplicating the constraint is probably expected
             # to change the Lagrange multipliers
-            expected_lamda_equality=[-0.7972455591261, -0.7972455591261],
-            expected_lamda_inequality=[1.846591],
+            expected_lamda_equality=np.array([-0.7972455591261, -0.7972455591261]),
+            expected_lamda_inequality=np.array([1.846591]),
         ),
         # Test 1 detailed in ANL-80-64 page 25
         # with added, unintrusive, bounds
@@ -75,9 +75,9 @@ class VMCONTestAsset:
                 [lambda x: np.array([-0.5 * x[0], -2 * x[1]])],
             ),
             initial_x=np.array([2.0, 2.0]),
-            expected_x=[8.228756e-1, 9.114378e-1],
-            expected_lamda_equality=[-1.594491],
-            expected_lamda_inequality=[1.846591],
+            expected_x=np.array([8.228756e-1, 9.114378e-1]),
+            expected_lamda_equality=np.array([-1.594491]),
+            expected_lamda_inequality=np.array([1.846591]),
             lbs=np.array([-10, -10]),
             ubs=np.array([10, 10]),
         ),
@@ -98,9 +98,9 @@ class VMCONTestAsset:
                 ],
             ),
             initial_x=np.array([2.0, 2.0]),
-            expected_x=[1.6649685472365443, 0.55404867491788852],
-            expected_lamda_equality=[],
-            expected_lamda_inequality=[0, 0.80489557193146243],
+            expected_x=np.array([1.6649685472365443, 0.55404867491788852]),
+            expected_lamda_equality=np.array([]),
+            expected_lamda_inequality=np.array([0, 0.80489557193146243]),
         ),
         # Example 1a of https://en.wikipedia.org/wiki/Lagrange_multiplier
         VMCONTestAsset(
@@ -114,9 +114,9 @@ class VMCONTestAsset:
             ),
             initial_x=np.array([1.0, 1.05]),
             epsilon=1e-8,
-            expected_x=[-0.5 * 2**0.5, -0.5 * 2**0.5],
-            expected_lamda_equality=[-(2 ** (-0.5))],
-            expected_lamda_inequality=[],
+            expected_x=np.array([-0.5 * 2**0.5, -0.5 * 2**0.5]),
+            expected_lamda_equality=np.array([-(2 ** (-0.5))]),
+            expected_lamda_inequality=np.array([]),
             max_iter=30,
         ),
     ],
@@ -161,9 +161,9 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
             ),
             initial_x=np.array([2.0, 2.0]),
             max_iter=5,
-            expected_x=[2.3999994310874733, 0.6],
-            expected_lamda_equality=[0.0],
-            expected_lamda_inequality=[0.0],
+            expected_x=np.array([2.3999994310874733, 0.6]),
+            expected_lamda_equality=np.array([0.0]),
+            expected_lamda_inequality=np.array([0.0]),
         ),
     ],
 )

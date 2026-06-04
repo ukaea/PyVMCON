@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
 
 import cvxpy as cp
 import numpy as np
@@ -31,7 +31,7 @@ def solve(
     initial_B: np.ndarray | None = None,
     callback: Callable[[int, Result, VectorType, float], None] | None = None,
     additional_convergence: (
-        Callable[[Result, VectorType, VectorType, VectorType, VectorType], None] | None
+        Callable[[Result, VectorType, VectorType, VectorType, VectorType], bool] | None
     ) = None,
     overwrite_convergence_criteria: bool = False,
 ) -> tuple[VectorType, VectorType, VectorType, Result]:
@@ -149,8 +149,10 @@ def solve(
     B = np.identity(n) if initial_B is None else initial_B
 
     callback = callback or (lambda _i, _result, _x, _con: None)
-    additional_convergence = additional_convergence or (
-        lambda _result, _x, _delta, _lambda_eq, _lambda_in: True
+    additional_convergence_function = (
+        (lambda _result, _x, _delta, _lambda_eq, _lambda_in: True)
+        if additional_convergence is None
+        else additional_convergence
     )
 
     # These two values being None allows the line
@@ -201,7 +203,7 @@ def solve(
 
         callback(j, result, x, convergence_info)
 
-        if additional_convergence(
+        if additional_convergence_function(
             result,
             x,
             delta,
@@ -479,7 +481,7 @@ def perform_linesearch(
             lamda_inequality=lamda_inequality,
         )
 
-    return cast("ScalarType", alpha), mu_equality, mu_inequality, new_result
+    return alpha, mu_equality, mu_inequality, new_result
 
 
 def _derivative_lagrangian(

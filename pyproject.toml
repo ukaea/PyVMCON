@@ -24,6 +24,7 @@ Source = "https://github.com/ukaea/PyVMCON"
 
 [project.optional-dependencies]
 test = ["pytest"]
+dev = ["pre-commit", "ty==0.0.38"]
 docs = [
     "Sphinx>=6.1",
     "sphinxcontrib-mermaid>=0.9",
