@@ -24,7 +24,7 @@ Source = "https://github.com/ukaea/PyVMCON"
 
 [project.optional-dependencies]
 test = ["pytest"]
-dev = ["pre-commit", "ty==0.0.38"]
+dev = ["pre-commit", "ty==0.0.52"]
 docs = [
     "Sphinx>=6.1",
     "sphinxcontrib-mermaid>=0.9",
@@ -48,7 +48,7 @@ ignore = [
     "D213",
     "D401",
     "COM812",
-    "PLR",
+    "PLR0913",
     "N818",
     "N803",
     "N806",
