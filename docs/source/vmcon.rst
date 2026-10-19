@@ -26,8 +26,10 @@ Several facts are worth noting about problem formulation:
 
 The Lagrangian
 --------------
-VMCON is an augmented Lagrangian solver which means it uses the Lagrange multipliers, :math:`\vec{\lambda}`, of some
-solution to characterise the quality of the solution.
+VMCON is a sequential quadratic programming solver, meaning it solves a quadratic sub-problem at each iteration to find the search direction; a
+line-search is used along this direction to determine an appropriate step length, reducing the impact of poor starting conditions. The quadratic
+program solved at each iteration attempts to find the search direction that will minimise a quadratic approximation of the Lagrangian
+(i.e. the search direction that balances minimising the objective function while satisfying the linearised constraints).
 
 Of specific note is the Lagrangian function:
 
@@ -56,7 +58,7 @@ We also set the iteration number to 1, :math:`j=1`.
 The Quadratic Programming Problem
 ---------------------------------
 The Quadratic Programming Problem (QPP) will also be known as the Quadratic Sub-Problem (QSP) because it forms only a part of the
-VMCON algorithm--with the other half being the Augmented Lagrangian.
+VMCON algorithm.
 
 The function :math:`Q(\delta)` is a quadratic approximation of the Lagrangian function.
 Minimising :math:`Q(\delta)` subject to a linearisation of our constraints about :math:`\vec{x}_{j-1}` (aka solving the QPP)
@@ -128,7 +130,7 @@ Once the line search exits, we have found our optimal value and :math:`\alpha_j 
 On each iteration of the line search, we revise :math:`\alpha` using a quadratic approximation:
 
 .. math::
-    \alpha = min\left(0.1\alpha, \frac{-\alpha^2}{\phi(\alpha) - \phi(0) - \alpha(\phi(1) - \phi(0))}\right)
+    \alpha = min\left(0.1\alpha, \frac{-0.5\alpha^2}{\phi(\alpha) - \phi(0) - \alpha(\phi(1) - \phi(0))}\right)
 
 
 The Broyden-Fletcher-Goldfarb-Shanno (BFGS) Quasi-Newton Update
