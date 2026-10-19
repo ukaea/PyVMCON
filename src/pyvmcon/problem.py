@@ -19,7 +19,12 @@ MatrixType: TypeAlias = VectorType
 
 @dataclass
 class Result:
-    """The data from calling a problem."""
+    """The data from calling a problem.
+
+    .. deprecated:: 2.4.2
+            Result is now a dataclass so should not be iterated over
+            (including tuple unpacking the object).
+    """
 
     f: ScalarType
     """Value of the objective function."""
@@ -42,8 +47,8 @@ class Result:
         """Convert the dataclass into an iterable.
 
         .. deprecated:: 2.4.2
-                    Result is now a dataclass so should not be iterated over
-                    (including tuple unpacking the object).
+                Result is now a dataclass so should not be iterated over
+                (including tuple unpacking the object).
         """
         warnings.warn(
             "Using the Result class as a namedtuple is deprecated (e.g. by tuple "
@@ -108,6 +113,10 @@ class Problem(AbstractProblem):
 
     Note that VMCON assumes minimisation of f and that inequality constraints are
     feasible when they return a value >= 0.
+
+    .. deprecated:: 2.4.2
+            Problem is now a dataclass so should not be iterated over
+            (including tuple unpacking the object).
     """
 
     f: _ScalarReturnFunctionAlias
@@ -155,8 +164,8 @@ class Problem(AbstractProblem):
         """Convert the dataclass into an iterable.
 
         .. deprecated:: 2.4.2
-                    Problem is now a dataclass so should not be iterated over
-                    (including tuple unpacking the object).
+                Problem is now a dataclass so should not be iterated over
+                (including tuple unpacking the object).
         """
         warnings.warn(
             "Using the Problem class as a namedtuple is deprecated (e.g. by tuple "
