@@ -18,3 +18,8 @@ repos:
         entry: ty check .
         pass_filenames: false
         language: system
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+      - id: nbstripout
+        args: [--extra-keys=metadata.language_info.version]
