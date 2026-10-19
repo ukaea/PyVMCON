@@ -102,6 +102,10 @@ def solve(
         The result from running the solution vector through the problem.
 
     """  # noqa: E501
+    if not max_iter > 0:
+        error_msg = "max_iter must be greater than 0."
+        raise ValueError(error_msg)
+
     if len(x.shape) != 1:
         error_msg = "Input vector `x` is not a 1D array"
         raise ValueError(error_msg)
