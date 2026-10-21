@@ -387,8 +387,8 @@ def convergence_value(
 
     """
     abs_df_dot_delta = abs(np.dot(result.df, delta_j))
-    abs_equality_err = abs(np.sum(lamda_equality * result.eq))
-    abs_inequality_err = abs(np.sum(lamda_inequality * result.ie))
+    abs_equality_err = np.sum(abs(lamda_equality * result.eq))
+    abs_inequality_err = np.sum(abs(lamda_inequality * result.ie))
 
     return abs_df_dot_delta + abs_equality_err + abs_inequality_err
 
