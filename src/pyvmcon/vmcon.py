@@ -67,13 +67,13 @@ def solve(
         Initial estimate of the Hessian matrix `B`. If `None`, `B` is the
         identity matrix of shape `(n, n)`.
 
-    callback : Optional[Callable[[int, ndarray, Result], None]]
+    callback : Callable[[int, Result, VectorType, float], None] | None
         A callable which takes the current iteration, the `Result` of the
         current design point, current design point, and the convergence parameter
         as arguments and returns `None`. This callable is called each iteration
         after the QSP is solved but before the convergence test.
 
-    additional_convergence : Optional[Callable[[Result, ndarray, ndarray, ndarray, ndarray], None]]
+    additional_convergence : Callable[[Result, VectorType, VectorType, VectorType, VectorType], bool] | None
         A callabale which takes: the `Result` of the current design point,
         the current design point, the proposed search direction for the
         next design point, the equality Lagrange multipliers, and the
@@ -102,6 +102,10 @@ def solve(
         The result from running the solution vector through the problem.
 
     """  # noqa: E501
+    if not max_iter > 0:
+        error_msg = "max_iter must be greater than 0."
+        raise ValueError(error_msg)
+
     if len(x.shape) != 1:
         error_msg = "Input vector `x` is not a 1D array"
         raise ValueError(error_msg)
