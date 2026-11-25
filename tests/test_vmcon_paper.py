@@ -17,8 +17,8 @@ class VMCONTestAsset:
     problem: Problem
     initial_x: np.ndarray
     expected_x: np.ndarray
-    expected_lamda_equality: np.ndarray
-    expected_lamda_inequality: np.ndarray
+    expected_lamda_equality: np.ndarray | None
+    expected_lamda_inequality: np.ndarray | None
     lbs: np.ndarray | None = None
     ubs: np.ndarray | None = None
     max_iter: int = 10
@@ -162,8 +162,8 @@ def test_vmcon_paper_feasible_examples(vmcon_example: VMCONTestAsset):
             initial_x=np.array([2.0, 2.0]),
             max_iter=5,
             expected_x=np.array([2.3999994310874733, 0.6]),
-            expected_lamda_equality=np.array([0.0]),
-            expected_lamda_inequality=np.array([0.0]),
+            expected_lamda_equality=None,
+            expected_lamda_inequality=None,
         ),
     ],
 )
@@ -181,10 +181,14 @@ def test_vmcon_paper_infeasible_examples(vmcon_example: VMCONTestAsset):
     what is important--and thus tested--is that VMCON fails to
     converge in these infeasible cases.
     """
-    with pytest.raises(VMCONConvergenceException):
+    with pytest.raises(VMCONConvergenceException) as e:
         solve(
             vmcon_example.problem,
             vmcon_example.initial_x,
             max_iter=vmcon_example.max_iter,
             epsilon=vmcon_example.epsilon,
         )
+
+    assert e.value.x == pytest.approx(vmcon_example.expected_x)
+    assert e.value.lamda_equality == vmcon_example.expected_lamda_equality
+    assert e.value.lamda_inequality == vmcon_example.expected_lamda_inequality
