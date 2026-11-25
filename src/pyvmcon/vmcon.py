@@ -7,14 +7,13 @@ from typing import Any
 import cvxpy as cp
 import numpy as np
 
-from pyvmcon.problem import AbstractProblem, MatrixType, Result, ScalarType, VectorType
-
-from .exceptions import (
+from pyvmcon.exceptions import (
     LineSearchConvergenceException,
     QSPSolverException,
     VMCONConvergenceException,
     _QspSolveException,
 )
+from pyvmcon.problem import AbstractProblem, MatrixType, Result, ScalarType, VectorType
 
 logger = logging.getLogger(__name__)
 
@@ -188,13 +187,7 @@ def solve(
             error_msg = (
                 "QSP failed to solve, indicating no feasible solution could be found."
             )
-            raise QSPSolverException(
-                error_msg,
-                x=x,
-                result=result,
-                lamda_equality=lamda_equality,
-                lamda_inequality=lamda_inequality,
-            ) from e
+            raise QSPSolverException(error_msg, x=x, result=result) from e
 
         # Exit to optimisation loop if the convergence
         # criteria is met
@@ -252,13 +245,7 @@ def solve(
         error_msg = (
             f"Could not converge on a feasible solution after {max_iter} iterations."
         )
-        raise VMCONConvergenceException(
-            error_msg,
-            x=x,
-            result=result,
-            lamda_equality=lamda_equality,
-            lamda_inequality=lamda_inequality,
-        )
+        raise VMCONConvergenceException(error_msg, x=x, result=result)
 
     return x, lamda_equality, lamda_inequality, result
 
@@ -446,44 +433,39 @@ def perform_linesearch(
     mu_inequality = _calculate_mu_j(mu_inequality, lamda_inequality)
 
     def phi(result: Result) -> ScalarType:
-        sum_equality: ScalarType = (mu_equality * np.abs(result.eq)).sum()
-        sum_inequality: ScalarType = (
-            mu_inequality * np.abs(np.minimum(0, result.ie))
-        ).sum()
+        sum_equality = (mu_equality * np.abs(result.eq)).sum()
+        sum_inequality = (mu_inequality * np.abs(np.minimum(0, result.ie))).sum()
 
         return result.f + sum_equality + sum_inequality
 
-    phi_0 = phi(result)
+    # Powell's line search minimises the penalty function phi along the
+    # line x(alpha) = x_jm1 + alpha*delta. The test uses a linear model of
+    # phi with slope = grad(f).delta - (penalty at the start of the
+    # line)
+    phi_jm1 = phi(result)
+    slope = (result.df @ delta) - (phi_jm1 - result.f)
 
-    result_at_1 = problem(x_jm1 + delta)
-
-    # powell suggests this Delta due to possible
-    # discontinuity in the derivative at alpha=0
-    # Powell 1978
-    capital_delta = phi(result_at_1) - phi_0
+    if slope >= 0.0:
+        # Uphill search direction: the penalty function increases in the
+        # direction of the search
+        return 0.0, mu_equality, mu_inequality, result
 
     alpha = 1.0
     for _ in range(10):
-        # exit if we satisfy the Armijo condition or the Kovari condition
-        new_result = problem(x_jm1 + alpha * delta) if alpha != 1.0 else result_at_1
-        phi_alpha = phi(new_result)
-        if phi_alpha <= phi_0 + 0.1 * alpha * capital_delta or phi_alpha > phi_0:
+        new_result = problem(x_jm1 + alpha * delta)
+        aux = phi(new_result) - phi_jm1
+        # exit if the Armijo sufficient decrease condition is satisfied
+        if aux <= 0.1 * slope:
             break
 
-        alpha = min(
-            0.1 * alpha,
-            -(alpha**2) / (2 * (phi_alpha - phi_0 - capital_delta * alpha)),
-        )
+        # Revise the step length using a quadratic approximation
+        reduction = max(0.1, 0.5 * slope / (slope - aux))
+        alpha *= reduction
+        slope *= reduction
 
     else:
         error_msg = "Line search did not converge on an approximate minima"
-        raise LineSearchConvergenceException(
-            error_msg,
-            x=x_jm1,
-            result=result,
-            lamda_equality=lamda_equality,
-            lamda_inequality=lamda_inequality,
-        )
+        raise LineSearchConvergenceException(error_msg, x=x_jm1, result=result)
 
     return alpha, mu_equality, mu_inequality, new_result
 
